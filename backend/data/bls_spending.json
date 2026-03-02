@@ -1,0 +1,121 @@
+{
+  "_metadata": {
+    "source": "U.S. Bureau of Labor Statistics, Consumer Expenditure Surveys 2023",
+    "table": "Table 1203 — Income before taxes: Annual expenditure means by income bracket",
+    "published": "September 2024",
+    "unit": "Average annual dollars per consumer unit",
+    "notes": "null values indicate suppressed data (relative standard error >= 25%). Income brackets are annual income before taxes.",
+    "brackets": [
+      "lt_15000",
+      "15000_29999",
+      "30000_39999",
+      "40000_49999",
+      "50000_69999",
+      "70000_99999",
+      "100000_149999",
+      "150000_199999",
+      "ge_200000"
+    ],
+    "bracket_labels": {
+      "lt_15000": "Less than $15,000",
+      "15000_29999": "$15,000\u2013$29,999",
+      "30000_39999": "$30,000\u2013$39,999",
+      "40000_49999": "$40,000\u2013$49,999",
+      "50000_69999": "$50,000\u2013$69,999",
+      "70000_99999": "$70,000\u2013$99,999",
+      "100000_149999": "$100,000\u2013$149,999",
+      "150000_199999": "$150,000\u2013$199,999",
+      "ge_200000": "$200,000 and more"
+    }
+  },
+  "lt_15000": {
+    "food_at_home": 4037,
+    "food_away_from_home": 1647,
+    "apparel_and_services": 1039,
+    "transportation": 4909,
+    "healthcare": 2711,
+    "entertainment": 1317,
+    "personal_care_products_services": 443,
+    "education": null
+  },
+  "15000_29999": {
+    "food_at_home": 3624,
+    "food_away_from_home": 1556,
+    "apparel_and_services": 929,
+    "transportation": 5031,
+    "healthcare": 4248,
+    "entertainment": 1513,
+    "personal_care_products_services": 448,
+    "education": 452
+  },
+  "30000_39999": {
+    "food_at_home": 4430,
+    "food_away_from_home": 2235,
+    "apparel_and_services": 1204,
+    "transportation": 7759,
+    "healthcare": 4449,
+    "entertainment": 2510,
+    "personal_care_products_services": 594,
+    "education": null
+  },
+  "40000_49999": {
+    "food_at_home": 4769,
+    "food_away_from_home": 2533,
+    "apparel_and_services": 1226,
+    "transportation": 8261,
+    "healthcare": 5130,
+    "entertainment": 2110,
+    "personal_care_products_services": 633,
+    "education": null
+  },
+  "50000_69999": {
+    "food_at_home": 5536,
+    "food_away_from_home": 2877,
+    "apparel_and_services": 1339,
+    "transportation": 10437,
+    "healthcare": 5479,
+    "entertainment": 2309,
+    "personal_care_products_services": 737,
+    "education": 813
+  },
+  "70000_99999": {
+    "food_at_home": 6080,
+    "food_away_from_home": 3624,
+    "apparel_and_services": 2111,
+    "transportation": 12634,
+    "healthcare": 6028,
+    "entertainment": 3167,
+    "personal_care_products_services": 1020,
+    "education": 1106
+  },
+  "100000_149999": {
+    "food_at_home": 7053,
+    "food_away_from_home": 4907,
+    "apparel_and_services": 2467,
+    "transportation": 16653,
+    "healthcare": 7251,
+    "entertainment": 3998,
+    "personal_care_products_services": 1143,
+    "education": 1253
+  },
+  "150000_199999": {
+    "food_at_home": 8622,
+    "food_away_from_home": 6643,
+    "apparel_and_services": 3014,
+    "transportation": 21137,
+    "healthcare": 8061,
+    "entertainment": 5879,
+    "personal_care_products_services": 1409,
+    "education": 2109
+  },
+  "ge_200000": {
+    "food_at_home": 9702,
+    "food_away_from_home": 8824,
+    "apparel_and_services": 4671,
+    "transportation": 28308,
+    "healthcare": 10711,
+    "entertainment": 9526,
+    "personal_care_products_services": 1905,
+    "education": 6804
+  }
+}
