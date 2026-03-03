@@ -3,8 +3,8 @@ import Map from "../components/Map";
 import SearchBar, { type SearchResult } from "../components/SearchBar";
 import Sidebar from "../components/Sidebar";
 import { type DemographicsData } from "../components/DemoPanel";
-import { type POIData } from "../components/CompetitorsPanel";
-import { type PropertyData } from "../components/ParcelPanel";
+import { type CompetitorData } from "../components/CompetitorsPanel";
+import { type ParcelsData } from "../components/ParcelPanel";
 import { type SpendingData } from "../components/SpendingPanel";
 import { post } from "../api/client";
 
@@ -14,8 +14,8 @@ interface SearchResponse {
   lng: number;
   state: string;
   demographics: DemographicsData | null;
-  poi: POIData | null;
-  property: PropertyData | null;
+  competitors: CompetitorData | null;
+  parcels: ParcelsData | null;
   spending: SpendingData | null;
 }
 
@@ -24,9 +24,9 @@ export default function HomePage() {
   const [searchPin, setSearchPin] = useState<[number, number] | null>(null);
   const [boundary, setBoundary] = useState<object | null>(null);
   const [demographics, setDemographics] = useState<DemographicsData | null>(null);
-  const [poi, setPoi] = useState<POIData | null>(null);
+  const [competitors, setCompetitors] = useState<CompetitorData | null>(null);
   const [visibleCategories, setVisibleCategories] = useState<Set<string>>(new Set());
-  const [property, setProperty] = useState<PropertyData | null>(null);
+  const [parcels, setParcels] = useState<ParcelsData | null>(null);
   const [spending, setSpending] = useState<SpendingData | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeParcelId, setActiveParcelId] = useState<string | null>(null);
@@ -39,9 +39,9 @@ export default function HomePage() {
     setBoundary(null);
     setLoading(true);
     setDemographics(null);
-    setPoi(null);
+    setCompetitors(null);
     setVisibleCategories(new Set());
-    setProperty(null);
+    setParcels(null);
     setSpending(null);
     setActiveParcelId(null);
     setSelectedParcelId(null);
@@ -55,11 +55,11 @@ export default function HomePage() {
       });
       setDemographics(data.demographics);
       setBoundary(data.demographics?.boundary ?? null);
-      setPoi(data.poi);
-      if (data.poi) {
-        setVisibleCategories(new Set(data.poi.categories.map((c) => c.key)));
+      setCompetitors(data.competitors);
+      if (data.competitors) {
+        setVisibleCategories(new Set(data.competitors.categories.map((c) => c.key)));
       }
-      setProperty(data.property);
+      setParcels(data.parcels);
       setSpending(data.spending);
     } catch {
       // data stays null
@@ -84,11 +84,11 @@ export default function HomePage() {
           center={mapCenter}
           boundary={boundary}
           searchPin={searchPin}
-          poiItems={poi?.items ?? []}
-          poiCategories={poi?.categories ?? []}
+          competitorItems={competitors?.items ?? []}
+          competitorCategories={competitors?.categories ?? []}
           visibleCategories={visibleCategories}
           parcelFeatures={
-            property?.parcels
+            parcels?.parcels
               ?.filter((p) => p.geometry)
               .map((p) => ({
                 type: "Feature",
@@ -110,10 +110,10 @@ export default function HomePage() {
         hasResult={mapCenter !== null}
         demographics={demographics}
         loading={loading}
-        poi={poi}
+        competitors={competitors}
         visibleCategories={visibleCategories}
         onToggleCategory={handleToggleCategory}
-        property={property}
+        parcels={parcels}
         spending={spending}
         activeParcelId={activeParcelId}
         selectedParcelId={selectedParcelId}

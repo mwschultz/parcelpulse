@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import DemoPanel, { type DemographicsData } from "./DemoPanel";
-import CompetitorsPanel, { type POIData } from "./CompetitorsPanel";
-import ParcelPanel, { type PropertyData } from "./ParcelPanel";
+import CompetitorsPanel, { type CompetitorData } from "./CompetitorsPanel";
+import ParcelPanel, { type ParcelsData } from "./ParcelPanel";
 import SpendingPanel, { type SpendingData } from "./SpendingPanel";
 
 const TABS = ["Parcel", "Demographics", "Competitors", "Spending"] as const;
@@ -11,10 +11,10 @@ interface SidebarProps {
   hasResult: boolean;
   demographics: DemographicsData | null;
   loading: boolean;
-  poi: POIData | null;
+  competitors: CompetitorData | null;
   visibleCategories: Set<string>;
   onToggleCategory: (key: string) => void;
-  property: PropertyData | null;
+  parcels: ParcelsData | null;
   spending: SpendingData | null;
   activeParcelId: string | null;
   selectedParcelId: string | null;
@@ -22,7 +22,7 @@ interface SidebarProps {
   onParcelSelect: (parno: string) => void;
 }
 
-export default function Sidebar({ hasResult, demographics, loading, poi, visibleCategories, onToggleCategory, property, spending, activeParcelId, selectedParcelId, onParcelHover, onParcelSelect }: SidebarProps) {
+export default function Sidebar({ hasResult, demographics, loading, competitors, visibleCategories, onToggleCategory, parcels, spending, activeParcelId, selectedParcelId, onParcelHover, onParcelSelect }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<Tab>("Parcel");
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export default function Sidebar({ hasResult, demographics, loading, poi, visible
           <div className="text-sm" style={{ color: "#94a3b8" }}>
             {activeTab === "Parcel" && (
               <ParcelPanel
-                data={property}
+                data={parcels}
                 loading={loading}
                 activeParcelId={activeParcelId}
                 selectedParcelId={selectedParcelId}
@@ -82,7 +82,7 @@ export default function Sidebar({ hasResult, demographics, loading, poi, visible
             )}
             {activeTab === "Competitors" && (
               <CompetitorsPanel
-                data={poi}
+                data={competitors}
                 loading={loading}
                 visibleCategories={visibleCategories}
                 onToggle={onToggleCategory}

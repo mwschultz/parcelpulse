@@ -7,8 +7,8 @@ from app.database import get_db
 from app.rate_limit import limiter, WRITE_LIMIT
 from app.schemas.search import SearchRequest, SearchResponse
 from app.services.demographics import get_demographics
-from app.services.poi import get_poi
-from app.services.property import get_property
+from app.services.competitors import get_competitor_data
+from app.services.parcels import get_parcel_data
 from app.services.spending import get_spending
 
 logger = logging.getLogger(__name__)
@@ -30,16 +30,16 @@ async def search(
         demographics = None
 
     try:
-        poi = await get_poi(payload.lat, payload.lng, db)
+        competitors = await get_competitor_data(payload.lat, payload.lng, db)
     except Exception as e:
-        logger.warning(f"POI lookup failed: {e}")
-        poi = None
+        logger.warning(f"Competitor lookup failed: {e}")
+        competitors = None
 
     try:
-        property_data = await get_property(payload.lat, payload.lng, payload.state, db)
+        parcel_data = await get_parcel_data(payload.lat, payload.lng, payload.state, db)
     except Exception as e:
-        logger.warning(f"Property lookup failed: {e}")
-        property_data = None
+        logger.warning(f"Parcel lookup failed: {e}")
+        parcel_data = None
 
     try:
         spending = get_spending(
@@ -57,8 +57,8 @@ async def search(
             lng=payload.lng,
             state=payload.state,
             demographics=demographics,
-            poi=poi,
-            property=property_data,
+            competitors=competitors,
+            parcels=parcel_data,
             spending=spending,
         )
     except Exception as e:

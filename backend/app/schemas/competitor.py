@@ -1,22 +1,22 @@
 from pydantic import BaseModel
 
 
-class POIItem(BaseModel):
+class CompetitorItem(BaseModel):
     lat: float
     lng: float
     name: str
     category: str
 
 
-class POICategory(BaseModel):
+class CompetitorCategory(BaseModel):
     key: str
     label: str
     color: str
     count: int
 
 
-class POIResponse(BaseModel):
-    items: list[POIItem]
-    categories: list[POICategory]
+class CompetitorResponse(BaseModel):
+    items: list[CompetitorItem]
+    categories: list[CompetitorCategory]
     density_score: str
     radius_m: int

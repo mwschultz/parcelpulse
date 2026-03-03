@@ -79,7 +79,7 @@ def _parse_parcel(feature: dict, search_lat: float, search_lng: float) -> dict:
     }
 
 
-def _transform_property(features: list, lat: float, lng: float) -> dict:
+def _transform_parcel(features: list, lat: float, lng: float) -> dict:
     parcels = [_parse_parcel(f, lat, lng) for f in features]
     parcels.sort(key=lambda p: p["distance_mi"] if p["distance_mi"] is not None else float("inf"))
     return {"coverage": True, "state": "NC", "parcels": parcels, "rate_limited": False}
@@ -90,7 +90,7 @@ async def _get_nc_parcels(lat: float, lng: float, db: AsyncSession) -> dict:
 
     cached = await get_cached(db, cache_key)
     if cached:
-        return _transform_property(cached["features"], lat, lng)
+        return _transform_parcel(cached["features"], lat, lng)
 
     allowed = await check_and_increment("nconemap", settings.NCONEMAP_DAILY_CAP, db)
     if not allowed:
@@ -120,10 +120,10 @@ async def _get_nc_parcels(lat: float, lng: float, db: AsyncSession) -> dict:
 
     raw = {"features": data.get("features", [])}
     await set_cached(db, cache_key, "nconemap", raw, expires_days=30)
-    return _transform_property(raw["features"], lat, lng)
+    return _transform_parcel(raw["features"], lat, lng)
 
 
-async def get_property(lat: float, lng: float, state: str, db: AsyncSession) -> dict:
+async def get_parcel_data(lat: float, lng: float, state: str, db: AsyncSession) -> dict:
     if state.upper() != "NC":
         return {
             "coverage": False,

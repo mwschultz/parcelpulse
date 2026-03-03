@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, GeoJSON, Marker, CircleMarker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { POIItem, POICategory } from "./CompetitorsPanel";
+import type { CompetitorItem, CompetitorCategory } from "./CompetitorsPanel";
 
 // Fix Leaflet default marker icon broken by bundlers
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -47,8 +47,8 @@ interface MapProps {
   center?: [number, number] | null;
   boundary?: object | null;
   searchPin?: [number, number] | null;
-  poiItems?: POIItem[];
-  poiCategories?: POICategory[];
+  competitorItems?: CompetitorItem[];
+  competitorCategories?: CompetitorCategory[];
   visibleCategories?: Set<string>;
   parcelFeatures?: object[];
   activeParcelId?: string | null;
@@ -60,8 +60,8 @@ export default function Map({
   center = null,
   boundary = null,
   searchPin = null,
-  poiItems = [],
-  poiCategories = [],
+  competitorItems = [],
+  competitorCategories = [],
   visibleCategories = new Set(),
   parcelFeatures = [],
   activeParcelId = null,
@@ -71,11 +71,11 @@ export default function Map({
   const layerRefs = useRef<Record<string, L.Path>>({});
   const categoryColorMap = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const cat of poiCategories) {
+    for (const cat of competitorCategories) {
       map[cat.key] = cat.color;
     }
     return map;
-  }, [poiCategories]);
+  }, [competitorCategories]);
 
   useEffect(() => {
     Object.entries(layerRefs.current).forEach(([parno, layer]) => {
@@ -136,7 +136,7 @@ export default function Map({
         />
       )}
       {searchPin && <Marker position={searchPin} />}
-      {poiItems
+      {competitorItems
         .filter((item) => visibleCategories.has(item.category))
         .map((item, idx) => {
           const color = categoryColorMap[item.category] ?? "#94a3b8";

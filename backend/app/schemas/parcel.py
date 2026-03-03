@@ -19,7 +19,7 @@ class Parcel(BaseModel):
     geometry: dict | None
 
 
-class PropertyResponse(BaseModel):
+class ParcelResponse(BaseModel):
     coverage: bool
     state: str
     message: str | None = None

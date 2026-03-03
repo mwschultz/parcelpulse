@@ -75,8 +75,8 @@ out center;
 """
 
 
-def _transform_poi(elements: list, radius_m: int) -> dict:
-    """Transform raw Overpass elements into categorized POI response."""
+def _transform_competitor(elements: list, radius_m: int) -> dict:
+    """Transform raw Overpass elements into categorized competitor response."""
     items = []
     for element in elements:
         tags = element.get("tags", {})
@@ -135,12 +135,12 @@ def _transform_poi(elements: list, radius_m: int) -> dict:
     }
 
 
-async def get_poi(lat: float, lng: float, db: AsyncSession, radius_m: int = 1609) -> dict:
+async def get_competitor_data(lat: float, lng: float, db: AsyncSession, radius_m: int = 1609) -> dict:
     cache_key = f"overpass:{round(lat, 3)}:{round(lng, 3)}:{radius_m}"
 
     cached = await get_cached(db, cache_key)
     if cached:
-        return _transform_poi(cached["elements"], radius_m)
+        return _transform_competitor(cached["elements"], radius_m)
 
     query = _build_query(lat, lng, radius_m)
     async with httpx.AsyncClient(timeout=35.0) as client:
@@ -150,4 +150,4 @@ async def get_poi(lat: float, lng: float, db: AsyncSession, radius_m: int = 1609
 
     raw = {"elements": data.get("elements", [])}
     await set_cached(db, cache_key, "overpass", raw, expires_days=7)
-    return _transform_poi(raw["elements"], radius_m)
+    return _transform_competitor(raw["elements"], radius_m)

@@ -492,7 +492,6 @@ CREATE TABLE api_usage (
 28. Request logging — log each search (address, timestamp, cache hit/miss per service) to a `search_log` table for usage analytics
 29. Error handling audit — ensure all five external API services fail gracefully (timeout, bad response, rate limit) without crashing the app
 30. Security pass — CORS lockdown to frontend origin, rate limit by IP (SlowAPI), input sanitization on search endpoint
-31. Deployment — backend to Render, frontend to Netlify, env vars configured, CORS updated for production URLs
 
 ---
 

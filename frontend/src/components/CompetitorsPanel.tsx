@@ -1,26 +1,26 @@
-export interface POIItem {
+export interface CompetitorItem {
   lat: number;
   lng: number;
   name: string;
   category: string;
 }
 
-export interface POICategory {
+export interface CompetitorCategory {
   key: string;
   label: string;
   color: string;
   count: number;
 }
 
-export interface POIData {
-  items: POIItem[];
-  categories: POICategory[];
+export interface CompetitorData {
+  items: CompetitorItem[];
+  categories: CompetitorCategory[];
   density_score: string;
   radius_m: number;
 }
 
 interface CompetitorsPanelProps {
-  data: POIData | null;
+  data: CompetitorData | null;
   loading: boolean;
   visibleCategories: Set<string>;
   onToggle: (key: string) => void;

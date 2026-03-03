@@ -18,7 +18,7 @@ export interface ParcelData {
   geometry: object | null;
 }
 
-export interface PropertyData {
+export interface ParcelsData {
   coverage: boolean;
   state: string;
   message: string | null;
@@ -27,7 +27,7 @@ export interface PropertyData {
 }
 
 interface ParcelPanelProps {
-  data: PropertyData | null;
+  data: ParcelsData | null;
   loading: boolean;
   activeParcelId: string | null;
   selectedParcelId: string | null;
