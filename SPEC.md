@@ -546,12 +546,12 @@ Set up both backend and frontend scaffolds, get the map + geocoding working firs
 
 ## Success Criteria
 
-A hiring manager at JLL, CBRE, or a retail REIT should be able to:
+A user should be able to:
 
 1. Visit the app URL
 2. Type in a commercial address (e.g., "4325 Glenwood Ave, Raleigh, NC")
 3. Immediately see nearby properties, demographics, competitor landscape, and spending potential
-4. Think: "This person understands how we evaluate locations"
+4. Think: "This person understands how to evaluate locations"
 
 ---
 
