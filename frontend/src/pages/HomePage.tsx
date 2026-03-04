@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Map from "../components/Map";
 import SearchBar, { type SearchResult } from "../components/SearchBar";
+import InfoOverlay from "../components/InfoOverlay";
 import Sidebar from "../components/Sidebar";
 import { type DemographicsData } from "../components/DemoPanel";
 import { type CompetitorData } from "../components/CompetitorsPanel";
@@ -80,6 +81,7 @@ export default function HomePage() {
     <div className="flex h-screen overflow-hidden">
       <div className="relative flex-1">
         <SearchBar onSelect={handleSearch} />
+        <InfoOverlay onSearch={handleSearch} />
         <Map
           center={mapCenter}
           boundary={boundary}

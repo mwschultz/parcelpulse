@@ -17,8 +17,7 @@ CATEGORIES = {
     "retail":      {"label": "Retail",      "color": "#0ea5e9"},
 }
 
-# Categories included in density score (exclude retail catch-all)
-DENSITY_CATEGORIES = {"grocery", "convenience", "restaurant", "fast_food", "pharmacy", "bank", "gas_station", "medical"}
+DENSITY_CATEGORIES = {"grocery", "convenience", "restaurant", "fast_food", "pharmacy", "bank", "gas_station", "medical", "retail"}
 
 
 def _categorize(tags: dict) -> str | None:
