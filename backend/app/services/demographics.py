@@ -1,3 +1,4 @@
+import re
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -113,6 +114,9 @@ async def _get_fips(lat: float, lng: float) -> dict:
 async def _get_boundary(fips: dict, level: str, db: AsyncSession) -> dict | None:
     """Fetch Census boundary GeoJSON from TIGERweb, cached 90 days."""
     geoid = _build_geoid(fips, level)
+    if not re.match(r'^\d{5,15}$', geoid):
+        return None
+
     cache_key = f"tigerweb:{level}:{geoid}"
 
     cached = await get_cached(db, cache_key)

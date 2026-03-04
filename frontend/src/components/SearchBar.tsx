@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { API_URL } from "../api/client";
 
 interface GeoapifyFeature {
   properties: {
@@ -33,7 +34,6 @@ export default function SearchBar({ onSelect }: SearchBarProps) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const skipNextFetch = useRef(false);
-  const apiKey = import.meta.env.VITE_GEOAPIFY_KEY as string;
 
   const fetchSuggestions = useCallback(
     async (text: string) => {
@@ -43,7 +43,7 @@ export default function SearchBar({ onSelect }: SearchBarProps) {
         return;
       }
       try {
-        const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(text)}&apiKey=${apiKey}&limit=5&filter=countrycode:us`;
+        const url = `${API_URL}/api/geocode?text=${encodeURIComponent(text)}`;
         const res = await fetch(url);
         const data: GeoapifyResponse = await res.json();
         setSuggestions(data.features ?? []);
@@ -52,7 +52,7 @@ export default function SearchBar({ onSelect }: SearchBarProps) {
         setSuggestions([]);
       }
     },
-    [apiKey],
+    [],
   );
 
   useEffect(() => {
