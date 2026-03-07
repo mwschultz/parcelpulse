@@ -78,50 +78,78 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <div className="relative flex-1">
-        <SearchBar onSelect={handleSearch} />
-        <InfoOverlay onSearch={handleSearch} />
-        <Map
-          center={mapCenter}
-          boundary={boundary}
-          searchPin={searchPin}
-          competitorItems={competitors?.items ?? []}
-          competitorCategories={competitors?.categories ?? []}
+    <div className="flex h-screen flex-col overflow-hidden">
+      <header className="flex shrink-0 items-center justify-between bg-[#1a1f36] px-4 py-2">
+        <span className="text-sm font-bold tracking-wide text-[#0ea5e9]">ParcelPulse</span>
+        <a
+          href="https://mwschultz.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-gray-400 transition-colors hover:text-white"
+        >
+          Built by Matt Schultz · mwschultz.com
+        </a>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        <div className="relative flex-1">
+          <SearchBar onSelect={handleSearch} />
+          <InfoOverlay onSearch={handleSearch} />
+          <Map
+            center={mapCenter}
+            boundary={boundary}
+            searchPin={searchPin}
+            competitorItems={competitors?.items ?? []}
+            competitorCategories={competitors?.categories ?? []}
+            visibleCategories={visibleCategories}
+            parcelFeatures={
+              parcels?.parcels
+                ?.filter((p) => p.geometry)
+                .map((p) => ({
+                  type: "Feature",
+                  geometry: p.geometry,
+                  properties: {
+                    parno: p.parno,
+                    use_description: p.use_description,
+                    address: p.address,
+                    total_value: p.total_value,
+                  },
+                })) ?? []
+            }
+            activeParcelId={activeParcelId}
+            selectedParcelId={selectedParcelId}
+            onParcelClick={(parno) => setSelectedParcelId(parno)}
+          />
+        </div>
+        <Sidebar
+          hasResult={mapCenter !== null}
+          demographics={demographics}
+          loading={loading}
+          competitors={competitors}
           visibleCategories={visibleCategories}
-          parcelFeatures={
-            parcels?.parcels
-              ?.filter((p) => p.geometry)
-              .map((p) => ({
-                type: "Feature",
-                geometry: p.geometry,
-                properties: {
-                  parno: p.parno,
-                  use_description: p.use_description,
-                  address: p.address,
-                  total_value: p.total_value,
-                },
-              })) ?? []
-          }
+          onToggleCategory={handleToggleCategory}
+          parcels={parcels}
+          spending={spending}
           activeParcelId={activeParcelId}
           selectedParcelId={selectedParcelId}
-          onParcelClick={(parno) => setSelectedParcelId(parno)}
+          onParcelHover={setActiveParcelId}
+          onParcelSelect={setSelectedParcelId}
         />
       </div>
-      <Sidebar
-        hasResult={mapCenter !== null}
-        demographics={demographics}
-        loading={loading}
-        competitors={competitors}
-        visibleCategories={visibleCategories}
-        onToggleCategory={handleToggleCategory}
-        parcels={parcels}
-        spending={spending}
-        activeParcelId={activeParcelId}
-        selectedParcelId={selectedParcelId}
-        onParcelHover={setActiveParcelId}
-        onParcelSelect={setSelectedParcelId}
-      />
+
+      <footer className="flex shrink-0 items-center justify-center bg-[#1a1f36] py-1.5">
+        <span className="text-xs text-gray-500">
+          © 2026{" "}
+          <a
+            href="https://mwschultz.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 transition-colors hover:text-white"
+          >
+            Matt Schultz
+          </a>
+        </span>
+      </footer>
     </div>
   );
 }
