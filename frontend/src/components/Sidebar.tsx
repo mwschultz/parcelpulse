@@ -7,8 +7,6 @@ import SpendingPanel, { type SpendingData } from "./SpendingPanel";
 const TABS = ["Parcel", "Demographics", "Competitors", "Spending"] as const;
 type Tab = (typeof TABS)[number];
 
-// Collapsed height = drag handle (20px) + tab bar with py-3 (~52px)
-const COLLAPSED_H = 76;
 const EXPANDED_RATIO = 0.6;
 
 interface SidebarProps {
@@ -35,6 +33,9 @@ export default function Sidebar({
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
+  // collapsedH is measured from the actual rendered header so safe-area is included
+  const [collapsedH, setCollapsedH] = useState(100);
+  const headerRef = useRef<HTMLDivElement>(null);
   const dragHeightRef = useRef<number | null>(null);
   const dragStartY = useRef<number | null>(null);
   const dragStartH = useRef<number | null>(null);
@@ -44,6 +45,13 @@ export default function Sidebar({
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  // Measure true collapsed height (drag handle + tabs + safe-area spacer)
+  useEffect(() => {
+    if (headerRef.current) {
+      setCollapsedH(headerRef.current.offsetHeight);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     if (selectedParcelId) setActiveTab("Parcel");
@@ -56,14 +64,14 @@ export default function Sidebar({
 
   function handleDragStart(clientY: number) {
     dragStartY.current = clientY;
-    dragStartH.current = dragHeight ?? (sheetOpen ? window.innerHeight * EXPANDED_RATIO : COLLAPSED_H);
+    dragStartH.current = dragHeightRef.current ?? (sheetOpen ? window.innerHeight * EXPANDED_RATIO : collapsedH);
   }
 
   function handleDragMove(clientY: number) {
     if (dragStartY.current === null || dragStartH.current === null) return;
     const delta = dragStartY.current - clientY;
     const newH = Math.min(
-      Math.max(dragStartH.current + delta, COLLAPSED_H),
+      Math.max(dragStartH.current + delta, collapsedH),
       window.innerHeight * 0.9,
     );
     dragHeightRef.current = newH;
@@ -71,15 +79,15 @@ export default function Sidebar({
   }
 
   function handleDragEnd() {
-    const h = dragHeightRef.current ?? (sheetOpen ? window.innerHeight * EXPANDED_RATIO : COLLAPSED_H);
-    setSheetOpen(h > window.innerHeight * 0.2);
+    const h = dragHeightRef.current ?? (sheetOpen ? window.innerHeight * EXPANDED_RATIO : collapsedH);
+    setSheetOpen(h > collapsedH + 20);
     dragHeightRef.current = null;
     setDragHeight(null);
     dragStartY.current = null;
     dragStartH.current = null;
   }
 
-  const mobileHeight = dragHeight ?? (sheetOpen ? window.innerHeight * EXPANDED_RATIO : COLLAPSED_H);
+  const mobileHeight = dragHeight ?? (sheetOpen ? window.innerHeight * EXPANDED_RATIO : collapsedH);
 
   return (
     <aside
@@ -89,41 +97,47 @@ export default function Sidebar({
         borderTop: isMobile ? "1px solid #2e3a5c" : undefined,
         borderLeft: !isMobile ? "1px solid #2e3a5c" : undefined,
         height: isMobile ? mobileHeight : undefined,
+        minHeight: isMobile ? collapsedH : undefined,
         transition: dragHeight === null ? "height 0.25s ease" : undefined,
-        paddingBottom: isMobile ? "env(safe-area-inset-bottom)" : undefined,
       }}
     >
-      {/* Drag handle — mobile only */}
-      <div
-        className="md:hidden flex shrink-0 justify-center py-2 touch-none cursor-grab active:cursor-grabbing"
-        onTouchStart={(e) => handleDragStart(e.touches[0].clientY)}
-        onTouchMove={(e) => handleDragMove(e.touches[0].clientY)}
-        onTouchEnd={handleDragEnd}
-      >
-        <div className="h-1 w-10 rounded-full bg-gray-600" />
-      </div>
+      {/* Header: drag handle + tabs + safe-area spacer — measured by ref */}
+      <div ref={headerRef} className="shrink-0">
+        {/* Drag handle — mobile only */}
+        <div
+          className="md:hidden flex justify-center py-3 touch-none cursor-grab active:cursor-grabbing"
+          onTouchStart={(e) => handleDragStart(e.touches[0].clientY)}
+          onTouchMove={(e) => handleDragMove(e.touches[0].clientY)}
+          onTouchEnd={handleDragEnd}
+        >
+          <div className="h-1 w-10 rounded-full bg-gray-600" />
+        </div>
 
-      {/* Desktop header */}
-      <div className="hidden md:block px-4 py-4" style={{ borderBottom: "1px solid #2e3a5c" }}>
-        <h1 className="text-base font-bold text-white">ParcelPulse</h1>
-      </div>
+        {/* Desktop header */}
+        <div className="hidden md:block px-4 py-4" style={{ borderBottom: "1px solid #2e3a5c" }}>
+          <h1 className="text-base font-bold text-white">ParcelPulse</h1>
+        </div>
 
-      {/* Tabs */}
-      <div className="flex shrink-0" style={{ borderBottom: "1px solid #2e3a5c" }}>
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => handleTabClick(tab)}
-            className="flex-1 py-3 md:py-2 text-sm font-medium transition-colors"
-            style={{
-              color: activeTab === tab ? "#0ea5e9" : "#64748b",
-              borderBottom: activeTab === tab ? "2px solid #0ea5e9" : "2px solid transparent",
-              backgroundColor: "transparent",
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+        {/* Tabs */}
+        <div className="flex" style={{ borderBottom: "1px solid #2e3a5c" }}>
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => handleTabClick(tab)}
+              className="flex-1 py-4 md:py-2 text-sm font-medium transition-colors"
+              style={{
+                color: activeTab === tab ? "#0ea5e9" : "#64748b",
+                borderBottom: activeTab === tab ? "2px solid #0ea5e9" : "2px solid transparent",
+                backgroundColor: "transparent",
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Safe-area spacer — mobile only, pushes tab bar above home indicator */}
+        <div className="md:hidden" style={{ height: "env(safe-area-inset-bottom)" }} />
       </div>
 
       {/* Content */}
