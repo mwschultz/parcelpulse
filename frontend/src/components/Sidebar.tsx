@@ -7,8 +7,8 @@ import SpendingPanel, { type SpendingData } from "./SpendingPanel";
 const TABS = ["Parcel", "Demographics", "Competitors", "Spending"] as const;
 type Tab = (typeof TABS)[number];
 
-// Collapsed height = drag handle (20px) + tab bar (~36px)
-const COLLAPSED_H = 56;
+// Collapsed height = drag handle (20px) + tab bar with py-3 (~52px)
+const COLLAPSED_H = 76;
 const EXPANDED_RATIO = 0.6;
 
 interface SidebarProps {
@@ -35,6 +35,7 @@ export default function Sidebar({
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
+  const dragHeightRef = useRef<number | null>(null);
   const dragStartY = useRef<number | null>(null);
   const dragStartH = useRef<number | null>(null);
 
@@ -65,12 +66,14 @@ export default function Sidebar({
       Math.max(dragStartH.current + delta, COLLAPSED_H),
       window.innerHeight * 0.9,
     );
+    dragHeightRef.current = newH;
     setDragHeight(newH);
   }
 
   function handleDragEnd() {
-    const h = dragHeight ?? (sheetOpen ? window.innerHeight * EXPANDED_RATIO : COLLAPSED_H);
+    const h = dragHeightRef.current ?? (sheetOpen ? window.innerHeight * EXPANDED_RATIO : COLLAPSED_H);
     setSheetOpen(h > window.innerHeight * 0.2);
+    dragHeightRef.current = null;
     setDragHeight(null);
     dragStartY.current = null;
     dragStartH.current = null;
@@ -87,6 +90,7 @@ export default function Sidebar({
         borderLeft: !isMobile ? "1px solid #2e3a5c" : undefined,
         height: isMobile ? mobileHeight : undefined,
         transition: dragHeight === null ? "height 0.25s ease" : undefined,
+        paddingBottom: isMobile ? "env(safe-area-inset-bottom)" : undefined,
       }}
     >
       {/* Drag handle — mobile only */}
@@ -110,7 +114,7 @@ export default function Sidebar({
           <button
             key={tab}
             onClick={() => handleTabClick(tab)}
-            className="flex-1 py-2 text-sm font-medium transition-colors"
+            className="flex-1 py-3 md:py-2 text-sm font-medium transition-colors"
             style={{
               color: activeTab === tab ? "#0ea5e9" : "#64748b",
               borderBottom: activeTab === tab ? "2px solid #0ea5e9" : "2px solid transparent",
