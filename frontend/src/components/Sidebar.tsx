@@ -48,10 +48,13 @@ export default function Sidebar({
 
   // Measure true collapsed height (drag handle + tabs + safe-area spacer)
   useEffect(() => {
-    if (headerRef.current) {
-      setCollapsedH(headerRef.current.offsetHeight);
-    }
-  }, [isMobile]);
+    const el = headerRef.current;
+    if (!el) return;
+    setCollapsedH(el.offsetHeight);
+    const ro = new ResizeObserver(() => setCollapsedH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     if (selectedParcelId) setActiveTab("Parcel");

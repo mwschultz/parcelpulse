@@ -78,7 +78,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex h-[100dvh] flex-col overflow-hidden">
       <header className="flex shrink-0 items-center justify-between bg-[#1a1f36] px-4 py-2">
         <span className="text-sm font-bold tracking-wide text-[#0ea5e9]">ParcelPulse</span>
         <a
