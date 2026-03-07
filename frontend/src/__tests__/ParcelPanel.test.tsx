@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ParcelPanel, { ParcelsData, ParcelData } from '../components/ParcelPanel';
+import ParcelPanel from '../components/ParcelPanel';
+import type { ParcelsData, ParcelData } from '../components/ParcelPanel';
 
 function makeParcel(overrides: Partial<ParcelData> = {}): ParcelData {
   return {

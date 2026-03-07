@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import SpendingPanel, { SpendingData } from '../components/SpendingPanel';
+import SpendingPanel from '../components/SpendingPanel';
+import type { SpendingData } from '../components/SpendingPanel';
 
 vi.mock('react-chartjs-2', () => ({ Bar: () => null }));
 

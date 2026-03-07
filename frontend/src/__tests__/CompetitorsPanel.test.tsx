@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import CompetitorsPanel, { CompetitorData } from '../components/CompetitorsPanel';
+import CompetitorsPanel from '../components/CompetitorsPanel';
+import type { CompetitorData } from '../components/CompetitorsPanel';
 
 function makeData(overrides: Partial<CompetitorData> = {}): CompetitorData {
   return {
