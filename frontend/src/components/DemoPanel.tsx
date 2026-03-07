@@ -222,7 +222,7 @@ export default function DemoPanel({ data, loading }: DemoPanelProps) {
       </div>
 
       {/* FIPS footnote */}
-      <p className="text-xs" style={{ color: "#334155" }}>
+      <p className="truncate text-[10px] md:text-xs" style={{ color: "#334155" }}>
         {data.geography_label} · ACS 5-Year
       </p>
     </div>

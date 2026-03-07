@@ -43,7 +43,7 @@ export default function InfoOverlay({ onSearch }: InfoOverlayProps) {
       {/* Info icon button — top-right of map, below zoom controls */}
       <button
         onClick={() => setOpen(true)}
-        className="absolute right-2.5 top-[90px] z-[1000] flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#0ea5e9] shadow-md transition-colors hover:bg-[#0ea5e9] hover:text-white"
+        className="absolute left-2.5 top-[90px] z-[1000] flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#0ea5e9] shadow-md transition-colors hover:bg-[#0ea5e9] hover:text-white md:left-auto md:right-2.5"
         aria-label="About ParcelPulse"
       >
         <span className="text-base leading-none">ⓘ</span>

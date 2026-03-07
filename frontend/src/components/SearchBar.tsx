@@ -94,7 +94,7 @@ export default function SearchBar({ onSelect }: SearchBarProps) {
   }
 
   return (
-    <div ref={containerRef} className="absolute left-1/2 top-4 z-[1000] w-full max-w-md -translate-x-1/2 px-4">
+    <div ref={containerRef} className="absolute top-4 z-[1000] left-0 right-0 px-4 md:left-1/2 md:right-auto md:w-full md:max-w-md md:-translate-x-1/2">
       <div className="relative">
         <input
           type="text"
