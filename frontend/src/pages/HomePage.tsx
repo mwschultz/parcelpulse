@@ -30,10 +30,16 @@ export default function HomePage() {
   const [parcels, setParcels] = useState<ParcelsData | null>(null);
   const [spending, setSpending] = useState<SpendingData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [lastSearch, setLastSearch] = useState<SearchResult | null>(null);
   const [activeParcelId, setActiveParcelId] = useState<string | null>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
 
+  function handleRetryCompetitors() {
+    if (lastSearch) handleSearch(lastSearch);
+  }
+
   async function handleSearch(result: SearchResult) {
+    setLastSearch(result);
     const pin: [number, number] = [result.lat, result.lng];
     setMapCenter(pin);
     setSearchPin(pin);
@@ -128,6 +134,7 @@ export default function HomePage() {
           competitors={competitors}
           visibleCategories={visibleCategories}
           onToggleCategory={handleToggleCategory}
+          onRetryCompetitors={handleRetryCompetitors}
           parcels={parcels}
           spending={spending}
           activeParcelId={activeParcelId}

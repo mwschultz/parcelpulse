@@ -17,16 +17,26 @@ function makeData(overrides: Partial<CompetitorData> = {}): CompetitorData {
 }
 
 describe('CompetitorsPanel', () => {
-  it('renders_nothing_when_data_null', () => {
+  it('renders_nothing_when_data_null_and_not_failed', () => {
     const { container } = render(
-      <CompetitorsPanel data={null} loading={false} visibleCategories={new Set()} onToggle={vi.fn()} />
+      <CompetitorsPanel data={null} loading={false} failed={false} onRetry={vi.fn()} visibleCategories={new Set()} onToggle={vi.fn()} />
     );
     expect(container).toBeEmptyDOMElement();
   });
 
+  it('shows_error_and_retry_when_failed', () => {
+    const onRetry = vi.fn();
+    render(
+      <CompetitorsPanel data={null} loading={false} failed={true} onRetry={onRetry} visibleCategories={new Set()} onToggle={vi.fn()} />
+    );
+    expect(screen.getByText(/temporarily unavailable/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/try again/i));
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+
   it('shows_loading_skeleton', () => {
     const { container } = render(
-      <CompetitorsPanel data={null} loading={true} visibleCategories={new Set()} onToggle={vi.fn()} />
+      <CompetitorsPanel data={null} loading={true} failed={false} onRetry={vi.fn()} visibleCategories={new Set()} onToggle={vi.fn()} />
     );
     const skeletons = container.querySelectorAll('.animate-pulse');
     expect(skeletons.length).toBeGreaterThan(0);
@@ -35,7 +45,7 @@ describe('CompetitorsPanel', () => {
   it('renders_density_badge_text', () => {
     render(
       <CompetitorsPanel data={makeData({ density_score: 'High' })} loading={false}
-        visibleCategories={new Set(['grocery'])} onToggle={vi.fn()} />
+        failed={false} onRetry={vi.fn()} visibleCategories={new Set(['grocery'])} onToggle={vi.fn()} />
     );
     expect(screen.getByText(/High Density/)).toBeInTheDocument();
   });
@@ -43,7 +53,7 @@ describe('CompetitorsPanel', () => {
   it('renders_category_rows_with_counts', () => {
     render(
       <CompetitorsPanel data={makeData()} loading={false}
-        visibleCategories={new Set(['grocery', 'restaurant'])} onToggle={vi.fn()} />
+        failed={false} onRetry={vi.fn()} visibleCategories={new Set(['grocery', 'restaurant'])} onToggle={vi.fn()} />
     );
     expect(screen.getByText('Grocery')).toBeInTheDocument();
     expect(screen.getByText('Restaurant')).toBeInTheDocument();
@@ -55,7 +65,7 @@ describe('CompetitorsPanel', () => {
     const onToggle = vi.fn();
     render(
       <CompetitorsPanel data={makeData()} loading={false}
-        visibleCategories={new Set(['grocery', 'restaurant'])} onToggle={onToggle} />
+        failed={false} onRetry={vi.fn()} visibleCategories={new Set(['grocery', 'restaurant'])} onToggle={onToggle} />
     );
     const groceryBtn = screen.getByText('Grocery').closest('button')!;
     fireEvent.click(groceryBtn);
@@ -65,7 +75,7 @@ describe('CompetitorsPanel', () => {
   it('hidden_category_has_reduced_opacity', () => {
     render(
       <CompetitorsPanel data={makeData()} loading={false}
-        visibleCategories={new Set(['restaurant'])} onToggle={vi.fn()} />
+        failed={false} onRetry={vi.fn()} visibleCategories={new Set(['restaurant'])} onToggle={vi.fn()} />
     );
     const groceryBtn = screen.getByText('Grocery').closest('button')!;
     expect(groceryBtn).toHaveStyle({ opacity: '0.4' });

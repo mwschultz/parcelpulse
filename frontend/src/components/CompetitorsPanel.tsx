@@ -22,6 +22,8 @@ export interface CompetitorData {
 interface CompetitorsPanelProps {
   data: CompetitorData | null;
   loading: boolean;
+  failed: boolean;
+  onRetry: () => void;
   visibleCategories: Set<string>;
   onToggle: (key: string) => void;
 }
@@ -43,7 +45,7 @@ function DensityBadge({ score }: { score: string }) {
   );
 }
 
-export default function CompetitorsPanel({ data, loading, visibleCategories, onToggle }: CompetitorsPanelProps) {
+export default function CompetitorsPanel({ data, loading, failed, onRetry, visibleCategories, onToggle }: CompetitorsPanelProps) {
   if (loading) {
     return (
       <div className="space-y-3">
@@ -58,7 +60,28 @@ export default function CompetitorsPanel({ data, loading, visibleCategories, onT
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    if (!failed) return null;
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-semibold uppercase tracking-wide text-white">
+          Competitive Landscape
+        </p>
+        <div className="rounded p-3" style={{ backgroundColor: "#2e3a5c" }}>
+          <p className="text-sm" style={{ color: "#f59e0b" }}>
+            Competitor data temporarily unavailable.
+          </p>
+          <button
+            onClick={onRetry}
+            className="mt-2 text-xs font-medium transition-colors hover:opacity-80"
+            style={{ color: "#0ea5e9" }}
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

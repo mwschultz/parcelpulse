@@ -53,6 +53,18 @@ async def search(
 
     try:
         competitors = await get_competitor_data(payload.lat, payload.lng, db)
+    except httpx.HTTPStatusError as e:
+        logger.warning(
+            "Competitor lookup abandoned",
+            extra={"status_code": e.response.status_code},
+        )
+        competitors = None
+    except (httpx.TimeoutException, httpx.ConnectError) as e:
+        logger.warning(
+            "Competitor lookup abandoned",
+            extra={"error_type": type(e).__name__},
+        )
+        competitors = None
     except Exception as e:
         logger.warning("Competitor lookup failed: %s", type(e).__name__)
         competitors = None
