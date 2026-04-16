@@ -16,6 +16,7 @@ interface SidebarProps {
   competitors: CompetitorData | null;
   visibleCategories: Set<string>;
   onToggleCategory: (key: string) => void;
+  onRetryCompetitors: () => void;
   parcels: ParcelsData | null;
   spending: SpendingData | null;
   activeParcelId: string | null;
@@ -26,7 +27,7 @@ interface SidebarProps {
 
 export default function Sidebar({
   hasResult, demographics, loading, competitors, visibleCategories,
-  onToggleCategory, parcels, spending, activeParcelId, selectedParcelId,
+  onToggleCategory, onRetryCompetitors, parcels, spending, activeParcelId, selectedParcelId,
   onParcelHover, onParcelSelect,
 }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<Tab>("Parcel");
@@ -170,6 +171,8 @@ export default function Sidebar({
               <CompetitorsPanel
                 data={competitors}
                 loading={loading}
+                failed={!loading && competitors === null}
+                onRetry={onRetryCompetitors}
                 visibleCategories={visibleCategories}
                 onToggle={onToggleCategory}
               />

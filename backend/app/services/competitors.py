@@ -1,7 +1,19 @@
+import logging
+import re
+
 import httpx
+from tenacity import (
+    retry,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential,
+    wait_random,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.cache import get_cached, set_cached
+
+logger = logging.getLogger(__name__)
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
@@ -134,6 +146,56 @@ def _transform_competitor(elements: list, radius_m: int) -> dict:
     }
 
 
+def _is_retryable(exc: BaseException) -> bool:
+    if isinstance(exc, httpx.HTTPStatusError):
+        return exc.response.status_code == 429 or exc.response.status_code >= 500
+    return isinstance(exc, (httpx.TimeoutException, httpx.ConnectError))
+
+
+def _redact_url(url: object) -> str:
+    return re.sub(
+        r'(?i)([?&](?:api[_-]?key|key|token|secret|password)=)[^&]*',
+        r'\1[redacted]',
+        str(url),
+    )
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10) + wait_random(0, 1),
+    retry=retry_if_exception(_is_retryable),
+    reraise=True,
+)
+async def _fetch_overpass(query: str) -> dict:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(35.0, connect=5.0)) as client:
+        try:
+            resp = await client.post(OVERPASS_URL, data={"data": query})
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPStatusError as exc:
+            status_code = exc.response.status_code
+            log_extra: dict = {
+                "status_code": status_code,
+                "url": _redact_url(exc.request.url),
+                "body_preview": exc.response.text[:500],
+            }
+            retry_after = exc.response.headers.get("Retry-After")
+            if retry_after:
+                log_extra["retry_after"] = retry_after
+            logger.warning(
+                "Overpass HTTP error (retryable=%s)",
+                status_code == 429 or status_code >= 500,
+                extra=log_extra,
+            )
+            raise
+        except (httpx.TimeoutException, httpx.ConnectError) as exc:
+            logger.warning(
+                "Overpass connection error",
+                extra={"error_type": type(exc).__name__, "url": OVERPASS_URL},
+            )
+            raise
+
+
 async def get_competitor_data(lat: float, lng: float, db: AsyncSession, radius_m: int = 1609) -> dict:
     cache_key = f"overpass:{round(lat, 3)}:{round(lng, 3)}:{radius_m}"
 
@@ -142,10 +204,7 @@ async def get_competitor_data(lat: float, lng: float, db: AsyncSession, radius_m
         return _transform_competitor(cached["elements"], radius_m)
 
     query = _build_query(lat, lng, radius_m)
-    async with httpx.AsyncClient(timeout=35.0) as client:
-        resp = await client.post(OVERPASS_URL, data={"data": query})
-        resp.raise_for_status()
-        data = resp.json()
+    data = await _fetch_overpass(query)
 
     raw = {"elements": data.get("elements", [])}
     await set_cached(db, cache_key, "overpass", raw, expires_days=7)
