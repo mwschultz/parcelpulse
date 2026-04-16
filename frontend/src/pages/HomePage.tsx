@@ -7,7 +7,7 @@ import { type DemographicsData } from "../components/DemoPanel";
 import { type CompetitorData } from "../components/CompetitorsPanel";
 import { type ParcelsData } from "../components/ParcelPanel";
 import { type SpendingData } from "../components/SpendingPanel";
-import { post } from "../api/client";
+import { post, get } from "../api/client";
 
 interface SearchResponse {
   address: string;
@@ -16,7 +16,6 @@ interface SearchResponse {
   state: string;
   demographics: DemographicsData | null;
   competitors: CompetitorData | null;
-  parcels: ParcelsData | null;
   spending: SpendingData | null;
 }
 
@@ -30,6 +29,7 @@ export default function HomePage() {
   const [parcels, setParcels] = useState<ParcelsData | null>(null);
   const [spending, setSpending] = useState<SpendingData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [parcelsLoading, setParcelsLoading] = useState(false);
   const [lastSearch, setLastSearch] = useState<SearchResult | null>(null);
   const [activeParcelId, setActiveParcelId] = useState<string | null>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
@@ -45,6 +45,7 @@ export default function HomePage() {
     setSearchPin(pin);
     setBoundary(null);
     setLoading(true);
+    setParcelsLoading(true);
     setDemographics(null);
     setCompetitors(null);
     setVisibleCategories(new Set());
@@ -53,25 +54,39 @@ export default function HomePage() {
     setActiveParcelId(null);
     setSelectedParcelId(null);
 
+    // Fire both concurrently before awaiting either
+    const searchPromise = post<SearchResponse>("/api/search", {
+      address: result.address,
+      lat: result.lat,
+      lng: result.lng,
+      state: result.state,
+    });
+    const parcelsPromise = get<ParcelsData>(
+      `/api/parcels?lat=${result.lat}&lng=${result.lng}&state=${result.state}`
+    );
+
     try {
-      const data = await post<SearchResponse>("/api/search", {
-        address: result.address,
-        lat: result.lat,
-        lng: result.lng,
-        state: result.state,
-      });
+      const data = await searchPromise;
       setDemographics(data.demographics);
       setBoundary(data.demographics?.boundary ?? null);
       setCompetitors(data.competitors);
       if (data.competitors) {
         setVisibleCategories(new Set(data.competitors.categories.map((c) => c.key)));
       }
-      setParcels(data.parcels);
       setSpending(data.spending);
     } catch {
       // data stays null
     } finally {
       setLoading(false);
+    }
+
+    try {
+      const parcelData = await parcelsPromise;
+      setParcels(parcelData);
+    } catch {
+      // parcels stays null
+    } finally {
+      setParcelsLoading(false);
     }
   }
 
@@ -131,6 +146,7 @@ export default function HomePage() {
           hasResult={mapCenter !== null}
           demographics={demographics}
           loading={loading}
+          parcelsLoading={parcelsLoading}
           competitors={competitors}
           visibleCategories={visibleCategories}
           onToggleCategory={handleToggleCategory}

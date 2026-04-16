@@ -13,6 +13,7 @@ interface SidebarProps {
   hasResult: boolean;
   demographics: DemographicsData | null;
   loading: boolean;
+  parcelsLoading: boolean;
   competitors: CompetitorData | null;
   visibleCategories: Set<string>;
   onToggleCategory: (key: string) => void;
@@ -26,7 +27,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({
-  hasResult, demographics, loading, competitors, visibleCategories,
+  hasResult, demographics, loading, parcelsLoading, competitors, visibleCategories,
   onToggleCategory, onRetryCompetitors, parcels, spending, activeParcelId, selectedParcelId,
   onParcelHover, onParcelSelect,
 }: SidebarProps) {
@@ -157,7 +158,7 @@ export default function Sidebar({
             {activeTab === "Parcel" && (
               <ParcelPanel
                 data={parcels}
-                loading={loading}
+                loading={parcelsLoading}
                 activeParcelId={activeParcelId}
                 selectedParcelId={selectedParcelId}
                 onHover={onParcelHover}

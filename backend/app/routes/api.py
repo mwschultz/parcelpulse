@@ -12,6 +12,7 @@ from app.services.demographics import get_demographics
 from app.services.competitors import get_competitor_data
 from app.services.parcels import get_parcel_data
 from app.services.spending import get_spending
+from app.schemas.parcel import ParcelResponse
 
 logger = logging.getLogger(__name__)
 
@@ -70,12 +71,6 @@ async def search(
         competitors = None
 
     try:
-        parcel_data = await get_parcel_data(payload.lat, payload.lng, payload.state, db)
-    except Exception as e:
-        logger.warning("Parcel lookup failed: %s", type(e).__name__)
-        parcel_data = None
-
-    try:
         spending = get_spending(
             demographics.get("median_household_income", 0) if demographics else 0,
             demographics.get("households", 0) if demographics else 0,
@@ -92,12 +87,23 @@ async def search(
             state=payload.state,
             demographics=demographics,
             competitors=competitors,
-            parcels=parcel_data,
             spending=spending,
         )
     except Exception as e:
         logger.error("Response serialization failed: %s", type(e).__name__)
         raise HTTPException(status_code=500, detail="Failed to build response")
+
+
+@router.get("/parcels", response_model=ParcelResponse)
+@limiter.limit(WRITE_LIMIT)
+async def parcels(
+    request: Request,
+    lat: float = Query(..., ge=-90, le=90),
+    lng: float = Query(..., ge=-180, le=180),
+    state: str = Query(..., min_length=2, max_length=2),
+    db: AsyncSession = Depends(get_db),
+):
+    return await get_parcel_data(lat, lng, state, db)
 
 
 @router.get("/usage")

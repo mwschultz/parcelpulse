@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field
 
 from app.schemas.demographics import DemographicsResponse
 from app.schemas.competitor import CompetitorResponse
-from app.schemas.parcel import ParcelResponse
 from app.schemas.spending import SpendingResponse
 
 
@@ -20,5 +19,4 @@ class SearchResponse(BaseModel):
     state: str
     demographics: DemographicsResponse | None = None
     competitors: CompetitorResponse | None = None
-    parcels: ParcelResponse | None = None
     spending: SpendingResponse | None = None

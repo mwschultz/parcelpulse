@@ -2,7 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger.json import JsonFormatter
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -11,7 +11,7 @@ from app.rate_limit import limiter
 from app.routes.api import router as api_router
 
 _handler = logging.StreamHandler()
-_handler.setFormatter(jsonlogger.JsonFormatter(
+_handler.setFormatter(JsonFormatter(
     fmt="%(asctime)s %(name)s %(levelname)s %(message)s"
 ))
 _app_logger = logging.getLogger("app")
