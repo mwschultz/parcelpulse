@@ -57,7 +57,6 @@ async def test_search_returns_200_with_all_fields(http_client):
     with (
         patch("app.routes.api.get_demographics", new_callable=AsyncMock, return_value=MOCK_DEMOGRAPHICS),
         patch("app.routes.api.get_competitor_data", new_callable=AsyncMock, return_value=MOCK_COMPETITORS),
-        patch("app.routes.api.get_parcel_data", new_callable=AsyncMock, return_value=MOCK_PARCELS),
         patch("app.routes.api.get_spending", return_value=MOCK_SPENDING),
     ):
         resp = await http_client.post("/api/search", json=SEARCH_PAYLOAD)
@@ -66,15 +65,25 @@ async def test_search_returns_200_with_all_fields(http_client):
     body = resp.json()
     assert "demographics" in body
     assert "competitors" in body
-    assert "parcels" in body
     assert "spending" in body
+    assert "parcels" not in body
     assert body["demographics"]["population"] == 3000
     assert body["competitors"]["density_score"] == "Medium"
-    assert body["parcels"]["coverage"] is True
 
 
 @pytest.mark.asyncio
-async def test_search_non_nc_parcels_coverage_false(http_client):
+async def test_parcels_endpoint_nc(http_client):
+    with patch("app.routes.api.get_parcel_data", new_callable=AsyncMock, return_value=MOCK_PARCELS):
+        resp = await http_client.get("/api/parcels", params={"lat": 35.8304, "lng": -78.6679, "state": "NC"})
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["coverage"] is True
+    assert body["parcels"][0]["parno"] == "1234"
+
+
+@pytest.mark.asyncio
+async def test_parcels_endpoint_non_nc_coverage_false(http_client):
     non_nc_parcels = {
         "coverage": False,
         "state": "TX",
@@ -82,16 +91,11 @@ async def test_search_non_nc_parcels_coverage_false(http_client):
         "parcels": [],
         "rate_limited": False,
     }
-    with (
-        patch("app.routes.api.get_demographics", new_callable=AsyncMock, return_value=MOCK_DEMOGRAPHICS),
-        patch("app.routes.api.get_competitor_data", new_callable=AsyncMock, return_value=MOCK_COMPETITORS),
-        patch("app.routes.api.get_parcel_data", new_callable=AsyncMock, return_value=non_nc_parcels),
-        patch("app.routes.api.get_spending", return_value=MOCK_SPENDING),
-    ):
-        resp = await http_client.post("/api/search", json={**SEARCH_PAYLOAD, "state": "TX"})
+    with patch("app.routes.api.get_parcel_data", new_callable=AsyncMock, return_value=non_nc_parcels):
+        resp = await http_client.get("/api/parcels", params={"lat": 30.2672, "lng": -97.7431, "state": "TX"})
 
     assert resp.status_code == 200
-    assert resp.json()["parcels"]["coverage"] is False
+    assert resp.json()["coverage"] is False
 
 
 @pytest.mark.asyncio
@@ -99,7 +103,6 @@ async def test_search_service_failure_returns_null_field(http_client):
     with (
         patch("app.routes.api.get_demographics", new_callable=AsyncMock, side_effect=RuntimeError("census down")),
         patch("app.routes.api.get_competitor_data", new_callable=AsyncMock, return_value=MOCK_COMPETITORS),
-        patch("app.routes.api.get_parcel_data", new_callable=AsyncMock, return_value=MOCK_PARCELS),
         patch("app.routes.api.get_spending", return_value=None),
     ):
         resp = await http_client.post("/api/search", json=SEARCH_PAYLOAD)
