@@ -7,17 +7,7 @@ import { type DemographicsData } from "../components/DemoPanel";
 import { type CompetitorData } from "../components/CompetitorsPanel";
 import { type ParcelsData } from "../components/ParcelPanel";
 import { type SpendingData } from "../components/SpendingPanel";
-import { post, get } from "../api/client";
-
-interface SearchResponse {
-  address: string;
-  lat: number;
-  lng: number;
-  state: string;
-  demographics: DemographicsData | null;
-  competitors: CompetitorData | null;
-  spending: SpendingData | null;
-}
+import { get } from "../api/client";
 
 export default function HomePage() {
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
@@ -28,14 +18,26 @@ export default function HomePage() {
   const [visibleCategories, setVisibleCategories] = useState<Set<string>>(new Set());
   const [parcels, setParcels] = useState<ParcelsData | null>(null);
   const [spending, setSpending] = useState<SpendingData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [competitorsLoading, setCompetitorsLoading] = useState(false);
+  const [spendingLoading, setSpendingLoading] = useState(false);
   const [parcelsLoading, setParcelsLoading] = useState(false);
   const [lastSearch, setLastSearch] = useState<SearchResult | null>(null);
   const [activeParcelId, setActiveParcelId] = useState<string | null>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
 
-  function handleRetryCompetitors() {
-    if (lastSearch) handleSearch(lastSearch);
+  async function handleRetryCompetitors() {
+    if (!lastSearch) return;
+    setCompetitorsLoading(true);
+    setCompetitors(null);
+    setVisibleCategories(new Set());
+    get<CompetitorData>(`/api/competitors?lat=${lastSearch.lat}&lng=${lastSearch.lng}`)
+      .then((data) => {
+        setCompetitors(data);
+        setVisibleCategories(new Set(data.categories.map((c) => c.key)));
+      })
+      .catch(() => {})
+      .finally(() => setCompetitorsLoading(false));
   }
 
   async function handleSearch(result: SearchResult) {
@@ -44,7 +46,8 @@ export default function HomePage() {
     setMapCenter(pin);
     setSearchPin(pin);
     setBoundary(null);
-    setLoading(true);
+    setDemoLoading(true);
+    setCompetitorsLoading(true);
     setParcelsLoading(true);
     setDemographics(null);
     setCompetitors(null);
@@ -54,39 +57,37 @@ export default function HomePage() {
     setActiveParcelId(null);
     setSelectedParcelId(null);
 
-    // Fire both concurrently before awaiting either
-    const searchPromise = post<SearchResponse>("/api/search", {
-      address: result.address,
-      lat: result.lat,
-      lng: result.lng,
-      state: result.state,
-    });
-    const parcelsPromise = get<ParcelsData>(
-      `/api/parcels?lat=${result.lat}&lng=${result.lng}&state=${result.state}`
-    );
+    // Fire demographics, competitors, parcels in parallel — each updates its panel independently
+    const demoPromise = get<DemographicsData>(`/api/demographics?lat=${result.lat}&lng=${result.lng}`)
+      .then((data): DemographicsData | null => {
+        setDemographics(data);
+        setBoundary(data.boundary ?? null);
+        return data;
+      })
+      .catch((): null => null)
+      .finally(() => setDemoLoading(false));
 
-    try {
-      const data = await searchPromise;
-      setDemographics(data.demographics);
-      setBoundary(data.demographics?.boundary ?? null);
-      setCompetitors(data.competitors);
-      if (data.competitors) {
-        setVisibleCategories(new Set(data.competitors.categories.map((c) => c.key)));
-      }
-      setSpending(data.spending);
-    } catch {
-      // data stays null
-    } finally {
-      setLoading(false);
-    }
+    get<CompetitorData>(`/api/competitors?lat=${result.lat}&lng=${result.lng}`)
+      .then((data) => {
+        setCompetitors(data);
+        setVisibleCategories(new Set(data.categories.map((c) => c.key)));
+      })
+      .catch(() => {})
+      .finally(() => setCompetitorsLoading(false));
 
-    try {
-      const parcelData = await parcelsPromise;
-      setParcels(parcelData);
-    } catch {
-      // parcels stays null
-    } finally {
-      setParcelsLoading(false);
+    get<ParcelsData>(`/api/parcels?lat=${result.lat}&lng=${result.lng}&state=${result.state}`)
+      .then((data) => setParcels(data))
+      .catch(() => {})
+      .finally(() => setParcelsLoading(false));
+
+    // Spending needs income + households from demographics, fires after demo resolves
+    const demo = await demoPromise;
+    if (demo) {
+      setSpendingLoading(true);
+      get<SpendingData>(`/api/spending?income=${demo.median_household_income}&households=${demo.households}`)
+        .then((data) => setSpending(data))
+        .catch(() => {})
+        .finally(() => setSpendingLoading(false));
     }
   }
 
@@ -116,6 +117,12 @@ export default function HomePage() {
         <div className="relative flex-1">
           <SearchBar onSelect={handleSearch} />
           <InfoOverlay onSearch={handleSearch} />
+          {parcelsLoading && (
+            <div className="absolute bottom-6 left-3 z-[1000] flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium pointer-events-none" style={{ backgroundColor: "#1a1f36", color: "#94a3b8", border: "1px solid #2e3a5c" }}>
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              Loading parcels…
+            </div>
+          )}
           <Map
             center={mapCenter}
             boundary={boundary}
@@ -145,7 +152,9 @@ export default function HomePage() {
         <Sidebar
           hasResult={mapCenter !== null}
           demographics={demographics}
-          loading={loading}
+          demoLoading={demoLoading}
+          competitorsLoading={competitorsLoading}
+          spendingLoading={spendingLoading}
           parcelsLoading={parcelsLoading}
           competitors={competitors}
           visibleCategories={visibleCategories}

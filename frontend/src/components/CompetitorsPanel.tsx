@@ -17,6 +17,7 @@ export interface CompetitorData {
   categories: CompetitorCategory[];
   density_score: string;
   radius_m: number;
+  rate_limited?: boolean;
 }
 
 interface CompetitorsPanelProps {
@@ -78,6 +79,21 @@ export default function CompetitorsPanel({ data, loading, failed, onRetry, visib
           >
             Try again
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (data.rate_limited) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-semibold uppercase tracking-wide text-white">
+          Competitive Landscape
+        </p>
+        <div className="rounded p-3" style={{ backgroundColor: "#2e3a5c" }}>
+          <p className="text-sm" style={{ color: "#f59e0b" }}>
+            Daily data limit reached. Competitor data will be available again tomorrow.
+          </p>
         </div>
       </div>
     );

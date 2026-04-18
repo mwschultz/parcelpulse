@@ -12,7 +12,9 @@ const EXPANDED_RATIO = 0.6;
 interface SidebarProps {
   hasResult: boolean;
   demographics: DemographicsData | null;
-  loading: boolean;
+  demoLoading: boolean;
+  competitorsLoading: boolean;
+  spendingLoading: boolean;
   parcelsLoading: boolean;
   competitors: CompetitorData | null;
   visibleCategories: Set<string>;
@@ -27,9 +29,9 @@ interface SidebarProps {
 }
 
 export default function Sidebar({
-  hasResult, demographics, loading, parcelsLoading, competitors, visibleCategories,
-  onToggleCategory, onRetryCompetitors, parcels, spending, activeParcelId, selectedParcelId,
-  onParcelHover, onParcelSelect,
+  hasResult, demographics, demoLoading, competitorsLoading, spendingLoading, parcelsLoading,
+  competitors, visibleCategories, onToggleCategory, onRetryCompetitors, parcels, spending,
+  activeParcelId, selectedParcelId, onParcelHover, onParcelSelect,
 }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<Tab>("Parcel");
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -166,20 +168,20 @@ export default function Sidebar({
               />
             )}
             {activeTab === "Demographics" && (
-              <DemoPanel data={demographics} loading={loading} />
+              <DemoPanel data={demographics} loading={demoLoading} />
             )}
             {activeTab === "Competitors" && (
               <CompetitorsPanel
                 data={competitors}
-                loading={loading}
-                failed={!loading && competitors === null}
+                loading={competitorsLoading}
+                failed={!competitorsLoading && competitors === null}
                 onRetry={onRetryCompetitors}
                 visibleCategories={visibleCategories}
                 onToggle={onToggleCategory}
               />
             )}
             {activeTab === "Spending" && (
-              <SpendingPanel data={spending} loading={loading} />
+              <SpendingPanel data={spending} loading={spendingLoading} />
             )}
           </div>
         )}

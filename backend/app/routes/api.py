@@ -8,6 +8,9 @@ from app.config import settings
 from app.database import get_db
 from app.rate_limit import limiter, WRITE_LIMIT
 from app.schemas.search import SearchRequest, SearchResponse
+from app.schemas.demographics import DemographicsResponse
+from app.schemas.competitor import CompetitorResponse
+from app.schemas.spending import SpendingResponse
 from app.services.demographics import get_demographics
 from app.services.competitors import get_competitor_data
 from app.services.parcels import get_parcel_data
@@ -92,6 +95,48 @@ async def search(
     except Exception as e:
         logger.error("Response serialization failed: %s", type(e).__name__)
         raise HTTPException(status_code=500, detail="Failed to build response")
+
+
+@router.get("/demographics", response_model=DemographicsResponse)
+@limiter.limit(WRITE_LIMIT)
+async def demographics(
+    request: Request,
+    lat: float = Query(..., ge=-90, le=90),
+    lng: float = Query(..., ge=-180, le=180),
+    db: AsyncSession = Depends(get_db),
+):
+    return await get_demographics(lat, lng, db)
+
+
+@router.get("/competitors", response_model=CompetitorResponse)
+@limiter.limit(WRITE_LIMIT)
+async def competitors(
+    request: Request,
+    lat: float = Query(..., ge=-90, le=90),
+    lng: float = Query(..., ge=-180, le=180),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await get_competitor_data(lat, lng, db)
+    except httpx.HTTPStatusError as e:
+        logger.warning("Competitor lookup abandoned: status %s", e.response.status_code)
+        raise HTTPException(status_code=502, detail="Competitor data unavailable")
+    except (httpx.TimeoutException, httpx.ConnectError) as e:
+        logger.warning("Competitor lookup abandoned: %s", type(e).__name__)
+        raise HTTPException(status_code=503, detail="Competitor data unavailable")
+    except Exception as e:
+        logger.warning("Competitor lookup failed: %s", type(e).__name__)
+        raise HTTPException(status_code=502, detail="Competitor data unavailable")
+
+
+@router.get("/spending", response_model=SpendingResponse)
+@limiter.limit(WRITE_LIMIT)
+async def spending(
+    request: Request,
+    income: float = Query(0, ge=0),
+    households: int = Query(0, ge=0),
+):
+    return get_spending(income, households)
 
 
 @router.get("/parcels", response_model=ParcelResponse)
