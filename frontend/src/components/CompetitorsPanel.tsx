@@ -17,7 +17,7 @@ export interface CompetitorData {
   categories: CompetitorCategory[];
   density_score: string;
   radius_m: number;
-  rate_limited: boolean;
+  rate_limited?: boolean;
 }
 
 interface CompetitorsPanelProps {
