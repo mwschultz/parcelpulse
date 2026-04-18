@@ -26,8 +26,18 @@ export default function HomePage() {
   const [activeParcelId, setActiveParcelId] = useState<string | null>(null);
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
 
-  function handleRetryCompetitors() {
-    if (lastSearch) handleSearch(lastSearch);
+  async function handleRetryCompetitors() {
+    if (!lastSearch) return;
+    setCompetitorsLoading(true);
+    setCompetitors(null);
+    setVisibleCategories(new Set());
+    get<CompetitorData>(`/api/competitors?lat=${lastSearch.lat}&lng=${lastSearch.lng}`)
+      .then((data) => {
+        setCompetitors(data);
+        setVisibleCategories(new Set(data.categories.map((c) => c.key)));
+      })
+      .catch(() => {})
+      .finally(() => setCompetitorsLoading(false));
   }
 
   async function handleSearch(result: SearchResult) {
@@ -107,6 +117,12 @@ export default function HomePage() {
         <div className="relative flex-1">
           <SearchBar onSelect={handleSearch} />
           <InfoOverlay onSearch={handleSearch} />
+          {parcelsLoading && (
+            <div className="absolute bottom-6 left-3 z-[1000] flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium pointer-events-none" style={{ backgroundColor: "#1a1f36", color: "#94a3b8", border: "1px solid #2e3a5c" }}>
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              Loading parcels…
+            </div>
+          )}
           <Map
             center={mapCenter}
             boundary={boundary}

@@ -2,8 +2,10 @@ import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.services.cache import get_cached, set_cached
 from app.services.geoapify_places import fetch_places
+from app.services.rate_limiter import check_and_increment
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +106,10 @@ async def get_competitor_data(lat: float, lng: float, db: AsyncSession, radius_m
     cached = await get_cached(db, cache_key)
     if cached:
         return _transform_competitor(cached["features"], radius_m)
+
+    allowed = await check_and_increment("geoapify_places", settings.GEOAPIFY_DAILY_CAP, db)
+    if not allowed:
+        return {"items": [], "categories": [], "density_score": "Low", "radius_m": radius_m, "rate_limited": True}
 
     features = await fetch_places(lat, lng, radius_m)
 

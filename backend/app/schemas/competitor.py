@@ -20,3 +20,4 @@ class CompetitorResponse(BaseModel):
     categories: list[CompetitorCategory]
     density_score: str
     radius_m: int
+    rate_limited: bool = False
