@@ -18,6 +18,7 @@ const BOUNDARY_STYLE = {
   opacity: 0.8,
   fillColor: "#0ea5e9",
   fillOpacity: 0.12,
+  interactive: false,
 };
 
 interface MapControllerProps {
