@@ -140,7 +140,10 @@ async def spending(
     income: float = Query(0, ge=0),
     households: int = Query(0, ge=0),
 ):
-    return get_spending(income, households)
+    result = get_spending(income, households)
+    if result is None:
+        raise HTTPException(status_code=404, detail="No spending data available")
+    return result
 
 
 @router.get("/parcels", response_model=ParcelResponse)
