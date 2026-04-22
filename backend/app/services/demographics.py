@@ -8,7 +8,7 @@ from app.services.cache import get_cached, set_cached
 
 logger = logging.getLogger(__name__)
 
-CENSUS_GEOCODER_URL = "https://geocoding.geo.census.gov/geocoder/geographies/coordinates"
+FCC_AREA_URL = "https://geo.fcc.gov/api/census/block/find"
 CENSUS_ACS_URL = "https://api.census.gov/data/2023/acs/acs5"
 TIGERWEB_BASE = "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2023/MapServer"
 
@@ -57,65 +57,46 @@ def _build_label(fips: dict, level: str) -> str:
 
 
 async def _get_fips(lat: float, lng: float) -> dict:
-    """Convert lat/lng to FIPS with geography level via fallback chain."""
+    """Convert lat/lng to FIPS via FCC Area API (block-level, no key required)."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(CENSUS_GEOCODER_URL, params={
-                "x": lng,
-                "y": lat,
-                "benchmark": "Public_AR_Current",
-                "vintage": "Current_Current",
-                "layers": "10,8,84",
+            resp = await client.get(FCC_AREA_URL, params={
+                "latitude": lat,
+                "longitude": lng,
                 "format": "json",
+                "showall": "false",
             })
             resp.raise_for_status()
             data = resp.json()
     except Exception as e:
-        logger.warning("Census Geocoder failed: %s: %s", type(e).__name__, e)
+        logger.warning("FCC Area API failed: %s: %s", type(e).__name__, e)
         return {"level": "unavailable"}
 
-    geos = data.get("result", {}).get("geographies", {})
+    block = data.get("Block", {})
+    county = data.get("County", {})
+    state = data.get("State", {})
 
-    # Pull county name from Counties layer if present (available at all levels)
-    counties = geos.get("Counties", [])
-    county_name = counties[0].get("NAME", "") if counties else ""
+    fips_code = block.get("FIPS", "")
+    if not fips_code or len(fips_code) < 15:
+        return {"level": "unavailable"}
 
-    # Block group (most granular)
-    bgs = geos.get("Census Block Groups", [])
-    if bgs:
-        bg = bgs[0]
-        return {
-            "level": "block_group",
-            "state": bg["STATE"],
-            "county": bg["COUNTY"],
-            "tract": bg["TRACT"],
-            "block_group": bg["BLKGRP"],
-            "county_name": county_name,
-        }
+    # FIPS block code: 2-digit state + 3-digit county + 6-digit tract + 4-digit block
+    state_fips = fips_code[0:2]
+    county_fips = fips_code[2:5]
+    tract_fips = fips_code[5:11]
+    block_fips = fips_code[11:15]
+    block_group = block_fips[0]  # first digit of block = block group
 
-    # Tract fallback
-    tracts = geos.get("Census Tracts", [])
-    if tracts:
-        t = tracts[0]
-        return {
-            "level": "tract",
-            "state": t["STATE"],
-            "county": t["COUNTY"],
-            "tract": t["TRACT"],
-            "county_name": county_name,
-        }
+    county_name = county.get("name", "")
 
-    # County fallback
-    if counties:
-        c = counties[0]
-        return {
-            "level": "county",
-            "state": c["STATE"],
-            "county": c["COUNTY"],
-            "county_name": c.get("NAME", f"County {c['COUNTY']}"),
-        }
-
-    return {"level": "unavailable"}
+    return {
+        "level": "block_group",
+        "state": state_fips,
+        "county": county_fips,
+        "tract": tract_fips,
+        "block_group": block_group,
+        "county_name": county_name,
+    }
 
 
 async def _get_boundary(fips: dict, level: str, db: AsyncSession) -> dict | None:

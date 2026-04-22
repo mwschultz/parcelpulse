@@ -5,40 +5,35 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from app.services.demographics import _get_fips
 
 
-def _make_response(geographies: dict) -> MagicMock:
+def _make_response(data: dict) -> MagicMock:
     mock_resp = MagicMock()
     mock_resp.raise_for_status = MagicMock()
-    mock_resp.json.return_value = {"result": {"geographies": geographies}}
+    mock_resp.json.return_value = data
     return mock_resp
 
 
-BG_GEO = {
-    "Census Block Groups": [{"STATE": "37", "COUNTY": "183", "TRACT": "052601", "BLKGRP": "1"}],
-    "Counties": [{"STATE": "37", "COUNTY": "183", "NAME": "Wake County"}],
+VALID_FCC = {
+    "Block": {"FIPS": "371830526011007"},
+    "County": {"FIPS": "37183", "name": "Wake"},
+    "State": {"FIPS": "37", "code": "NC", "name": "North Carolina"},
 }
 
-TRACT_GEO = {
-    "Census Block Groups": [],
-    "Census Tracts": [{"STATE": "37", "COUNTY": "183", "TRACT": "052601"}],
-    "Counties": [{"STATE": "37", "COUNTY": "183", "NAME": "Wake County"}],
+SHORT_FIPS_FCC = {
+    "Block": {"FIPS": "3718305260"},
+    "County": {"FIPS": "37183", "name": "Wake"},
+    "State": {"FIPS": "37", "code": "NC", "name": "North Carolina"},
 }
 
-COUNTY_GEO = {
-    "Census Block Groups": [],
-    "Census Tracts": [],
-    "Counties": [{"STATE": "37", "COUNTY": "183", "NAME": "Wake County"}],
-}
-
-EMPTY_GEO: dict = {
-    "Census Block Groups": [],
-    "Census Tracts": [],
-    "Counties": [],
+EMPTY_BLOCK_FCC = {
+    "Block": {},
+    "County": {"FIPS": "37183", "name": "Wake"},
+    "State": {"FIPS": "37", "code": "NC", "name": "North Carolina"},
 }
 
 
 @pytest.mark.asyncio
 async def test_returns_block_group_level():
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=_make_response(BG_GEO)):
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=_make_response(VALID_FCC)):
         result = await _get_fips(35.83, -78.67)
 
     assert result["level"] == "block_group"
@@ -49,34 +44,24 @@ async def test_returns_block_group_level():
 
 
 @pytest.mark.asyncio
-async def test_falls_back_to_tract():
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=_make_response(TRACT_GEO)):
-        result = await _get_fips(35.83, -78.67)
-
-    assert result["level"] == "tract"
-    assert result["tract"] == "052601"
-
-
-@pytest.mark.asyncio
-async def test_falls_back_to_county():
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=_make_response(COUNTY_GEO)):
-        result = await _get_fips(35.83, -78.67)
-
-    assert result["level"] == "county"
-    assert result["county"] == "183"
-
-
-@pytest.mark.asyncio
-async def test_returns_unavailable_when_empty():
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=_make_response(EMPTY_GEO)):
+async def test_returns_unavailable_when_fips_short():
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=_make_response(SHORT_FIPS_FCC)):
         result = await _get_fips(35.83, -78.67)
 
     assert result["level"] == "unavailable"
 
 
 @pytest.mark.asyncio
-async def test_pulls_county_name_from_counties_layer():
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=_make_response(BG_GEO)):
+async def test_returns_unavailable_when_block_missing():
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=_make_response(EMPTY_BLOCK_FCC)):
         result = await _get_fips(35.83, -78.67)
 
-    assert result["county_name"] == "Wake County"
+    assert result["level"] == "unavailable"
+
+
+@pytest.mark.asyncio
+async def test_pulls_county_name_from_fcc():
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=_make_response(VALID_FCC)):
+        result = await _get_fips(35.83, -78.67)
+
+    assert result["county_name"] == "Wake"
