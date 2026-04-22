@@ -105,7 +105,11 @@ async def demographics(
     lng: float = Query(..., ge=-180, le=180),
     db: AsyncSession = Depends(get_db),
 ):
-    return await get_demographics(lat, lng, db)
+    try:
+        return await get_demographics(lat, lng, db)
+    except Exception as e:
+        logger.error("Demographics lookup failed: %s", type(e).__name__)
+        raise HTTPException(status_code=503, detail="Demographics data unavailable")
 
 
 @router.get("/competitors", response_model=CompetitorResponse)

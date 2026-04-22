@@ -55,17 +55,20 @@ def _build_label(fips: dict, level: str) -> str:
 
 async def _get_fips(lat: float, lng: float) -> dict:
     """Convert lat/lng to FIPS with geography level via fallback chain."""
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(CENSUS_GEOCODER_URL, params={
-            "x": lng,
-            "y": lat,
-            "benchmark": "Public_AR_Current",
-            "vintage": "Current_Current",
-            "layers": "10,8,84",
-            "format": "json",
-        })
-        resp.raise_for_status()
-        data = resp.json()
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(CENSUS_GEOCODER_URL, params={
+                "x": lng,
+                "y": lat,
+                "benchmark": "Public_AR_Current",
+                "vintage": "Current_Current",
+                "layers": "10,8,84",
+                "format": "json",
+            })
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception:
+        return {"level": "unavailable"}
 
     geos = data.get("result", {}).get("geographies", {})
 
@@ -126,16 +129,19 @@ async def _get_boundary(fips: dict, level: str, db: AsyncSession) -> dict | None
     layer = TIGERWEB_LAYERS[level]
     url = f"{TIGERWEB_BASE}/{layer}/query"
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.get(url, params={
-            "where": f"GEOID='{geoid}'",
-            "outFields": "GEOID,NAME",
-            "returnGeometry": "true",
-            "outSR": "4326",
-            "f": "geojson",
-        })
-        resp.raise_for_status()
-        data = resp.json()
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(url, params={
+                "where": f"GEOID='{geoid}'",
+                "outFields": "GEOID,NAME",
+                "returnGeometry": "true",
+                "outSR": "4326",
+                "f": "geojson",
+            })
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception:
+        return None
 
     features = data.get("features", [])
     if not features:
@@ -207,15 +213,18 @@ async def _get_acs(fips: dict, level: str, db: AsyncSession) -> dict | None:
         geo_for = f"county:{fips['county']}"
         geo_in = f"state:{fips['state']}"
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.get(CENSUS_ACS_URL, params={
-            "get": ACS_VARIABLES,
-            "for": geo_for,
-            "in": geo_in,
-            "key": settings.CENSUS_API_KEY,
-        })
-        resp.raise_for_status()
-        rows = resp.json()
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(CENSUS_ACS_URL, params={
+                "get": ACS_VARIABLES,
+                "for": geo_for,
+                "in": geo_in,
+                "key": settings.CENSUS_API_KEY,
+            })
+            resp.raise_for_status()
+            rows = resp.json()
+    except Exception:
+        return None
 
     if len(rows) < 2:
         return None
