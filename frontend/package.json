@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest",
+    "typecheck": "tsc -b",
+    "test": "tsc -b && vitest run",
+    "test:watch": "vitest",
     "coverage": "vitest --coverage"
   },
   "dependencies": {

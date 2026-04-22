@@ -1,8 +1,9 @@
 """Unit tests for app.services.demographics."""
+import httpx
 import pytest
 from unittest.mock import AsyncMock, patch
 
-from app.services.demographics import get_demographics, _transform_acs
+from app.services.demographics import get_demographics, _get_fips, _get_acs, _get_boundary, _transform_acs
 
 
 LAT = 35.8304
@@ -72,6 +73,65 @@ async def test_block_group_level_returns_correct_geography(mock_db):
     assert result["geography_level"] == "block_group"
     assert "Block Group" in result["geography_label"]
     assert result["population"] == 3000
+
+
+@pytest.mark.asyncio
+async def test_fips_network_error_returns_unavailable():
+    """Network failure inside _get_fips → returns {'level': 'unavailable'}."""
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(side_effect=httpx.ConnectError("timeout"))
+    with patch("app.services.demographics.httpx.AsyncClient") as MockClient:
+        MockClient.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        MockClient.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await _get_fips(LAT, LNG)
+    assert result == {"level": "unavailable"}
+
+
+@pytest.mark.asyncio
+async def test_acs_network_error_returns_none(mock_db):
+    """Network failure inside _get_acs → returns None."""
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(side_effect=httpx.TimeoutException("timeout"))
+    with patch("app.services.demographics.httpx.AsyncClient") as MockClient:
+        MockClient.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        MockClient.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await _get_acs(BLOCK_GROUP_FIPS, "block_group", mock_db)
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_boundary_network_error_returns_none(mock_db):
+    """Network failure inside _get_boundary → returns None."""
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(side_effect=httpx.HTTPStatusError(
+        "error",
+        request=httpx.Request("GET", "https://tigerweb.geo.census.gov"),
+        response=httpx.Response(503, request=httpx.Request("GET", "https://tigerweb.geo.census.gov")),
+    ))
+    with patch("app.services.demographics.httpx.AsyncClient") as MockClient:
+        MockClient.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        MockClient.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await _get_boundary(BLOCK_GROUP_FIPS, "block_group", mock_db)
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_acs_none_falls_back_to_zeros_in_get_demographics(mock_db):
+    """When _get_acs returns None, get_demographics returns zeros for all numeric fields."""
+    with (
+        patch("app.services.demographics._get_fips", new_callable=AsyncMock,
+              return_value=BLOCK_GROUP_FIPS),
+        patch("app.services.demographics._get_acs", new_callable=AsyncMock,
+              return_value=None),
+        patch("app.services.demographics._get_boundary", new_callable=AsyncMock,
+              return_value=None),
+    ):
+        result = await get_demographics(LAT, LNG, mock_db)
+
+    assert result["geography_level"] == "block_group"
+    assert result["population"] == 0
+    assert result["median_household_income"] == 0
+    assert all(v == 0 for v in result["education"].values())
 
 
 def test_transform_acs_sums_education_buckets():
