@@ -1,9 +1,12 @@
+import logging
 import re
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.services.cache import get_cached, set_cached
+
+logger = logging.getLogger(__name__)
 
 CENSUS_GEOCODER_URL = "https://geocoding.geo.census.gov/geocoder/geographies/coordinates"
 CENSUS_ACS_URL = "https://api.census.gov/data/2023/acs/acs5"
@@ -67,7 +70,8 @@ async def _get_fips(lat: float, lng: float) -> dict:
             })
             resp.raise_for_status()
             data = resp.json()
-    except Exception:
+    except Exception as e:
+        logger.warning("Census Geocoder failed: %s: %s", type(e).__name__, e)
         return {"level": "unavailable"}
 
     geos = data.get("result", {}).get("geographies", {})
