@@ -2,7 +2,7 @@
 
 A commercial real estate intelligence tool that turns a street address into a one-page opportunity briefing. Enter an address and ParcelPulse pulls together parcel data, demographics, competitor density, and household spending estimates — the kind of cross-reference a CRE analyst would otherwise stitch together from five different tabs.
 
-**Live Demo:** [TBD](TBD)
+**Live Demo:** [ParcelPulse](https://parcelpulsemws.netlify.app/)
 
 ## Features
 
@@ -22,30 +22,30 @@ A commercial real estate intelligence tool that turns a street address into a on
 
 ## Tech Stack
 
-| Layer            | Technology                                                |
-| ---------------- | --------------------------------------------------------- |
-| Frontend         | React 19, Vite, TypeScript, Tailwind CSS v4               |
-| Maps             | Leaflet, react-leaflet, CartoDB Positron tiles            |
-| Charts           | Chart.js, react-chartjs-2                                 |
-| Backend          | Python 3.12, FastAPI (async), SQLAlchemy 2.0, Alembic     |
-| Database         | PostgreSQL 16 (asyncpg driver)                            |
-| HTTP client      | httpx (async)                                             |
-| Rate limiting    | SlowAPI                                                   |
-| Data sources     | Geoapify, NC OneMap, Census Bureau ACS, TIGERweb, Overpass, BLS |
-| Deployment       | Docker Compose for local Postgres                         |
+| Layer         | Technology                                                      |
+| ------------- | --------------------------------------------------------------- |
+| Frontend      | React 19, Vite, TypeScript, Tailwind CSS v4                     |
+| Maps          | Leaflet, react-leaflet, CartoDB Positron tiles                  |
+| Charts        | Chart.js, react-chartjs-2                                       |
+| Backend       | Python 3.12, FastAPI (async), SQLAlchemy 2.0, Alembic           |
+| Database      | PostgreSQL 16 (asyncpg driver)                                  |
+| HTTP client   | httpx (async)                                                   |
+| Rate limiting | SlowAPI                                                         |
+| Data sources  | Geoapify, NC OneMap, Census Bureau ACS, TIGERweb, Overpass, BLS |
+| Deployment    | Docker Compose for local Postgres                               |
 
 ## External APIs
 
 ParcelPulse stitches together six external data sources. All are free; two require an API key.
 
-| Service | Endpoint | Auth | Limits | Used For |
-| --- | --- | --- | --- | --- |
-| **Geoapify Geocoding Autocomplete** | `api.geoapify.com/v1/geocode/autocomplete` | API key (server-side proxy) | 3,000 req/day free tier; app-side cap 2,500/day | Address search / autocomplete dropdown |
-| **NC OneMap Parcels (ArcGIS REST)** | `services.nconemap.gov/secure/rest/services/NC1Map_Parcels/FeatureServer` | None | App-side cap 500/day | Parcel polygons, owner, land use, acreage (NC only) |
-| **US Census Bureau ACS 5-Year** | `api.census.gov/data` | API key | No published rate cap | Income, household count, age, education at block group / tract / county |
-| **Census TIGERweb** | `tigerweb.geo.census.gov/arcgis/rest/services` | None | No published rate cap | Geography boundary polygons (block group=10, tract=8, county=84) |
-| **Overpass API** (OpenStreetMap) | `overpass-api.de/api/interpreter` | None | Shared-instance fair-use | Nearby competitors / POI by category |
-| **BLS Consumer Expenditure Survey** | Pre-processed static JSON (`backend/data/bls_spending.json`) | n/a | n/a | Household spending estimates by income tier |
+| Service                             | Endpoint                                                                  | Auth                        | Limits                                          | Used For                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------- | --------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------- |
+| **Geoapify Geocoding Autocomplete** | `api.geoapify.com/v1/geocode/autocomplete`                                | API key (server-side proxy) | 3,000 req/day free tier; app-side cap 2,500/day | Address search / autocomplete dropdown                                  |
+| **NC OneMap Parcels (ArcGIS REST)** | `services.nconemap.gov/secure/rest/services/NC1Map_Parcels/FeatureServer` | None                        | App-side cap 500/day                            | Parcel polygons, owner, land use, acreage (NC only)                     |
+| **US Census Bureau ACS 5-Year**     | `api.census.gov/data`                                                     | API key                     | No published rate cap                           | Income, household count, age, education at block group / tract / county |
+| **Census TIGERweb**                 | `tigerweb.geo.census.gov/arcgis/rest/services`                            | None                        | No published rate cap                           | Geography boundary polygons (block group=10, tract=8, county=84)        |
+| **Overpass API** (OpenStreetMap)    | `overpass-api.de/api/interpreter`                                         | None                        | Shared-instance fair-use                        | Nearby competitors / POI by category                                    |
+| **BLS Consumer Expenditure Survey** | Pre-processed static JSON (`backend/data/bls_spending.json`)              | n/a                         | n/a                                             | Household spending estimates by income tier                             |
 
 Map tiles are served from CartoDB Positron (`{a,b,c}.basemaps.cartocdn.com/light_all/`) — not a JSON API, but worth flagging as an external dependency.
 
@@ -84,7 +84,7 @@ ParcelPulse is intentionally scoped: **parcel data is North Carolina only** (NC 
 
 ## Data Model
 
-ParcelPulse is a stateless public demo — there are no users, no projects, no saved searches. The only persistent state is the integration scaffolding: an `api_cache` table (key, service, response JSON, expiry) and an `api_usage` table (service, calls\_today, date) that drives the daily rate limiter. All real data lives in the external APIs and is fetched on demand, then cached.
+ParcelPulse is a stateless public demo — there are no users, no projects, no saved searches. The only persistent state is the integration scaffolding: an `api_cache` table (key, service, response JSON, expiry) and an `api_usage` table (service, calls_today, date) that drives the daily rate limiter. All real data lives in the external APIs and is fetched on demand, then cached.
 
 ## Local Development Setup
 
