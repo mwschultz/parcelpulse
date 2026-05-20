@@ -34,3 +34,4 @@ dist-ssr
 # Test coverage reports
 htmlcov/
 coverage/
+.coverage

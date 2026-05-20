@@ -364,7 +364,6 @@ Create a `.env` file in the backend directory:
 
 ```
 DATABASE_URL=postgresql+asyncpg://parcelpulse:devpassword@localhost:5432/parcelpulse
-SECRET_KEY=any-random-string-for-dev
 FRONTEND_URL=http://localhost:5173
 GEOAPIFY_API_KEY=your-geoapify-key
 CENSUS_API_KEY=your-census-key
@@ -393,8 +392,9 @@ Create a `.env` file in the frontend directory:
 
 ```
 VITE_API_URL=http://localhost:8000
-VITE_GEOAPIFY_KEY=your-geoapify-api-key
 ```
+
+The Geoapify key is held server-side only (set in the backend `.env`) and proxied through `GET /api/geocode` — it is never shipped to the frontend bundle.
 
 Start the dev server:
 
