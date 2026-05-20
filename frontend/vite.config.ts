@@ -9,7 +9,6 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/__tests__/setup.ts'],
     env: {
-      VITE_GEOAPIFY_KEY: 'test-api-key',
       VITE_API_URL: 'http://localhost:8000',
     },
     coverage: {
