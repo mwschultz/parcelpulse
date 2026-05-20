@@ -12,7 +12,7 @@ A commercial real estate intelligence tool that turns a street address into a on
 
 **Parcel Data** — NC OneMap integration returns owner name, land use classification, acreage, and the parcel polygon itself. Land use is color-coded on the map: blue for commercial, gray for residential, amber for vacant. Non-NC addresses get a graceful "coverage not available" response so the rest of the panels still work.
 
-**Demographics Panel** — US Census ACS 5-Year data: median household income, household count, age distribution, and education attainment. A fallback chain tries block group → tract → county so dense urban and sparse rural addresses both return something usable. The chosen geography boundary is rendered on the map.
+**Demographics Panel** — US Census ACS 5-Year data: median household income, household count, age distribution, and education attainment. The search lat/lng is resolved to a 15-digit block FIPS code via the FCC Area API, then a fallback chain tries block group → tract → county so dense urban and sparse rural addresses both return something usable. The chosen geography boundary is rendered on the map.
 
 **Competitors** — Overpass API (OpenStreetMap) pulls nearby supermarkets, restaurants, gas stations, retail, and other categories. A density score (High > 50, Medium 20–50, Low < 20) gives a one-glance read on commercial saturation. Categories can be toggled individually from the sidebar.
 
@@ -36,12 +36,13 @@ A commercial real estate intelligence tool that turns a street address into a on
 
 ## External APIs
 
-ParcelPulse stitches together six external data sources. All are free; two require an API key.
+ParcelPulse stitches together seven external data sources. All are free; two require an API key.
 
 | Service                             | Endpoint                                                                  | Auth                        | Limits                                          | Used For                                                                |
 | ----------------------------------- | ------------------------------------------------------------------------- | --------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------- |
 | **Geoapify Geocoding Autocomplete** | `api.geoapify.com/v1/geocode/autocomplete`                                | API key (server-side proxy) | 3,000 req/day free tier; app-side cap 2,500/day | Address search / autocomplete dropdown                                  |
 | **NC OneMap Parcels (ArcGIS REST)** | `services.nconemap.gov/secure/rest/services/NC1Map_Parcels/FeatureServer` | None                        | App-side cap 500/day                            | Parcel polygons, owner, land use, acreage (NC only)                     |
+| **FCC Area API**                    | `geo.fcc.gov/api/census/block/find`                                       | None                        | No published rate cap                           | Lat/lng → 15-digit block FIPS code (state, county, tract, block group)  |
 | **US Census Bureau ACS 5-Year**     | `api.census.gov/data`                                                     | API key                     | No published rate cap                           | Income, household count, age, education at block group / tract / county |
 | **Census TIGERweb**                 | `tigerweb.geo.census.gov/arcgis/rest/services`                            | None                        | No published rate cap                           | Geography boundary polygons (block group=10, tract=8, county=84)        |
 | **Overpass API** (OpenStreetMap)    | `overpass-api.de/api/interpreter`                                         | None                        | Shared-instance fair-use                        | Nearby competitors / POI by category                                    |
