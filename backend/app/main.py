@@ -23,9 +23,13 @@ app = FastAPI(title="ParcelPulse API", version="0.1.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+origins = [settings.FRONTEND_URL]
+if settings.FRONTEND_PROVIDER_URL:
+    origins.append(settings.FRONTEND_PROVIDER_URL)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL],
+    allow_origins=origins,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
