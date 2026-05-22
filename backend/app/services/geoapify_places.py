@@ -21,7 +21,20 @@ GEOAPIFY_CATEGORIES = [
     "healthcare.pharmacy",
     "service.financial.bank",
     "healthcare.clinic_or_praxis",
-    "commercial",  # catch-all for retail; specific subcategories above take priority
+    # Retail subcategories must be listed explicitly — Geoapify's "commercial"
+    # parent does not expand to its children, so a bare "commercial" filter
+    # returns almost nothing.
+    "commercial.department_store",
+    "commercial.shopping_mall",
+    "commercial.clothing",
+    "commercial.outdoor_and_sport",
+    "commercial.health_and_beauty",
+    "commercial.books",
+    "commercial.gift_and_souvenir",
+    "commercial.toy_and_game",
+    "commercial.discount_store",
+    "commercial.bag",
+    "commercial.jewelry",
 ]
 
 _CATEGORIES_PARAM = ",".join(GEOAPIFY_CATEGORIES)
