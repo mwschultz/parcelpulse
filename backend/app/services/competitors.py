@@ -101,7 +101,10 @@ def _transform_competitor(features: list, radius_m: int) -> dict:
 
 
 async def get_competitor_data(lat: float, lng: float, db: AsyncSession, radius_m: int = 1609) -> dict:
-    cache_key = f"geoapify_places:{round(lat, 3)}:{round(lng, 3)}:{radius_m}"
+    # Bump the version token whenever GEOAPIFY_CATEGORIES or other request
+    # parameters change shape — the new key orphans stale cache rows so the
+    # next search refetches with the updated request.
+    cache_key = f"geoapify_places:v2:{round(lat, 3)}:{round(lng, 3)}:{radius_m}"
 
     cached = await get_cached(db, cache_key)
     if cached:
