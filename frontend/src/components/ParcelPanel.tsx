@@ -24,6 +24,7 @@ export interface ParcelsData {
   message: string | null;
   parcels: ParcelData[];
   rate_limited: boolean;
+  unavailable?: boolean;
 }
 
 interface ParcelPanelProps {
@@ -174,6 +175,27 @@ export default function ParcelPanel({ data, loading, activeParcelId, selectedPar
         <p className="text-xs" style={{ color: "#64748b" }}>
           Daily request limit reached — try again tomorrow.
         </p>
+      </div>
+    );
+  }
+
+  if (data.unavailable) {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#94a3b8" }}>
+          Parcel Intelligence
+        </p>
+        <div
+          className="rounded-lg p-3"
+          style={{ backgroundColor: "#1c1408", border: "1px solid #78350f" }}
+        >
+          <p className="text-xs font-semibold" style={{ color: "#fbbf24" }}>
+            ⚠ Parcel data is temporarily unavailable.
+          </p>
+          <p className="mt-1 text-xs" style={{ color: "#92400e" }}>
+            NC OneMap is not responding — try again shortly.
+          </p>
+        </div>
       </div>
     );
   }
