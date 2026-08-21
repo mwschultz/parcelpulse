@@ -1,4 +1,5 @@
 """Unit tests for app.services.parcels."""
+import httpx
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -115,3 +116,111 @@ def test_transform_parcel_sorts_by_distance():
     result = _transform_parcel([feature_far, feature_near], LAT, LNG)
     assert result["parcels"][0]["parno"] == "NEAR"
     assert result["parcels"][1]["parno"] == "FAR"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("exc", [
+    httpx.TimeoutException("timed out"),
+    httpx.ConnectError("refused"),
+    ValueError("garbage json"),
+])
+async def test_nc_upstream_failure_returns_unavailable(mock_db, exc):
+    """Upstream failure degrades gracefully instead of raising a 500."""
+    miss_result = MagicMock()
+    miss_result.scalar_one_or_none.return_value = None
+    mock_db.execute.return_value = miss_result
+
+    with (
+        patch("app.services.parcels.check_and_increment", new_callable=AsyncMock, return_value=True),
+        patch("app.services.parcels.set_cached", new_callable=AsyncMock) as mock_set,
+        patch("httpx.AsyncClient.post", new_callable=AsyncMock, side_effect=exc),
+    ):
+        result = await get_parcel_data(LAT, LNG, "NC", mock_db)
+
+    assert result["unavailable"] is True
+    assert result["coverage"] is True
+    assert result["parcels"] == []
+    assert result["rate_limited"] is False
+    # A failed fetch must never be written to the 30-day cache
+    mock_set.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_nc_upstream_http_error_returns_unavailable(mock_db):
+    """A non-2xx from NC OneMap degrades gracefully."""
+    miss_result = MagicMock()
+    miss_result.scalar_one_or_none.return_value = None
+    mock_db.execute.return_value = miss_result
+
+    mock_response = MagicMock()
+    mock_response.status_code = 504
+    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+        "gateway timeout", request=MagicMock(), response=mock_response
+    )
+
+    with (
+        patch("app.services.parcels.check_and_increment", new_callable=AsyncMock, return_value=True),
+        patch("app.services.parcels.set_cached", new_callable=AsyncMock),
+        patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=mock_response),
+    ):
+        result = await get_parcel_data(LAT, LNG, "NC", mock_db)
+
+    assert result["unavailable"] is True
+    assert result["parcels"] == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("payload,label", [
+    # Verbatim payload observed from NC OneMap on 2026-08-20, served with HTTP 200
+    ({"status": "error", "messages": [
+        "Could not access any server machines. Please contact your system administrator."
+     ]}, "site-level"),
+    ({"status": "error", "messages": []}, "site-level, no messages"),
+    ({"error": {"code": 500, "message": "Unable to complete operation"}}, "rest-level"),
+    ([], "non-dict payload"),
+    ("service unavailable", "string payload"),
+])
+async def test_nc_error_envelope_with_200_returns_unavailable(mock_db, payload, label):
+    """ArcGIS serves errors with HTTP 200; those must not read as zero parcels."""
+    miss_result = MagicMock()
+    miss_result.scalar_one_or_none.return_value = None
+    mock_db.execute.return_value = miss_result
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()  # 200 — does not raise
+    mock_response.json.return_value = payload
+
+    with (
+        patch("app.services.parcels.check_and_increment", new_callable=AsyncMock, return_value=True),
+        patch("app.services.parcels.set_cached", new_callable=AsyncMock) as mock_set,
+        patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=mock_response),
+    ):
+        result = await get_parcel_data(LAT, LNG, "NC", mock_db)
+
+    assert result["unavailable"] is True, f"{label} should be unavailable"
+    assert result["parcels"] == []
+    # The critical assertion: an error payload must never poison the 30-day cache
+    mock_set.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_nc_genuine_empty_result_is_cached(mock_db):
+    """A real zero-parcel response is still a valid answer — cache it, don't flag it."""
+    miss_result = MagicMock()
+    miss_result.scalar_one_or_none.return_value = None
+    mock_db.execute.return_value = miss_result
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+    mock_response.json.return_value = {"type": "FeatureCollection", "features": []}
+
+    with (
+        patch("app.services.parcels.check_and_increment", new_callable=AsyncMock, return_value=True),
+        patch("app.services.parcels.set_cached", new_callable=AsyncMock) as mock_set,
+        patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=mock_response),
+    ):
+        result = await get_parcel_data(LAT, LNG, "NC", mock_db)
+
+    assert result.get("unavailable", False) is False
+    assert result["parcels"] == []
+    mock_set.assert_awaited_once()

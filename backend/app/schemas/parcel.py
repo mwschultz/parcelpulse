@@ -25,3 +25,4 @@ class ParcelResponse(BaseModel):
     message: str | None = None
     parcels: list[Parcel] = []
     rate_limited: bool = False
+    unavailable: bool = False
