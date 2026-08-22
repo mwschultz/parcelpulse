@@ -125,7 +125,11 @@ async def _get_nc_parcels(lat: float, lng: float, db: AsyncSession) -> dict:
     cache_key = f"nconemap:{round(lat, 3)}:{round(lng, 3)}"
 
     cached = await get_cached(db, cache_key)
-    if cached:
+    # An empty cached result is not trusted. It is indistinguishable from the
+    # {"features": []} that unguarded code wrote when ArcGIS answered 200 with an
+    # error body (see _error_envelope), so treat it as a miss and refetch. The
+    # refetch upserts the same cache_key, repairing the row in place.
+    if cached and cached.get("features"):
         return _transform_parcel(cached["features"], lat, lng)
 
     allowed = await check_and_increment("nconemap", settings.NCONEMAP_DAILY_CAP, db)

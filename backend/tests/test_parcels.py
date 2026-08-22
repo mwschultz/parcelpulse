@@ -68,6 +68,44 @@ async def test_nc_cache_hit_returns_parcels(mock_db):
 
 
 @pytest.mark.asyncio
+async def test_nc_cached_empty_is_refetched(mock_db):
+    """A cached {"features": []} is poison-shaped — treat it as a miss, not an answer.
+
+    Unguarded code wrote exactly this shape when NC OneMap answered 200 with an
+    error body, and it is byte-identical to a genuine empty result. Serving it
+    would report "no parcels here" for a real address until the 30-day TTL ran
+    out, so the read path must refetch and repair the row instead.
+    """
+    import json
+    cache_row = MagicMock()
+    cache_row.expires_at = None
+    cache_row.response_json = json.dumps({"features": []})
+
+    result_mock = MagicMock()
+    result_mock.scalar_one_or_none.return_value = cache_row
+    mock_db.execute.return_value = result_mock
+
+    feature = make_feature("REPAIR1", LAT, LNG)
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+    mock_response.json.return_value = {"features": [feature]}
+
+    with (
+        patch("app.services.parcels.check_and_increment", new_callable=AsyncMock, return_value=True),
+        patch("app.services.parcels.set_cached", new_callable=AsyncMock) as mock_set,
+        patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=mock_response) as mock_post,
+    ):
+        result = await get_parcel_data(LAT, LNG, "NC", mock_db)
+
+    # The stale empty was not served — upstream was consulted instead.
+    mock_post.assert_awaited_once()
+    assert len(result["parcels"]) == 1
+    assert result["parcels"][0]["parno"] == "REPAIR1"
+    # Same cache_key, so the write repairs the poisoned row in place.
+    mock_set.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_nc_api_call_and_cache_set(mock_db):
     """Cache miss → POST to NC OneMap → set_cached called → parcels returned."""
     # Cache miss
